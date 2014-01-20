@@ -20,6 +20,10 @@ This stack consists of:
 Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. You can easily adapt it to other platforms. 
 
 ##Installation##
+  
+  __At the moment These instruction not complete__
+
+
 Install node JS on your system  
 There are several ways to do it:  
 On Derbian/Ubuntu:  
