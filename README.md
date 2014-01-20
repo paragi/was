@@ -15,8 +15,8 @@ This stack consists of:
 * express module: HTML static file server module for node
 * WS websocket module for node
 * PHP (so far. You can adapt it to a number of mature scripting language that can be run as CGI)
-* A database of your choice. I experiment with the nonsql database ArangoDB (Not included this example)
-*  Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. You can easily adapt it to other platforms. 
+* Add a database of your choice.
+Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. You can easily adapt it to other platforms. 
 
 ##Status##
 
