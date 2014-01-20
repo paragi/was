@@ -1,0 +1,208 @@
+@import url("reset.css");
+@import url("messages.css");
+
+
+/* put your styles in here */
+
+h1 {font-size:2em;font-family:'Droid sans';}
+h2 {font-family:'Droid sans';}
+h3 {font-family:'Droid sans';border-bottom:solid 1px #ccc;}
+p {margin: 1em 0 1em 0;}
+
+body {
+  background:#456;
+  font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+  text-align:center;
+}
+
+pre{font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;}
+ul {list-style-type: disc;}
+
+header, section, footer {width:800px; margin:0 auto 0 auto;text-align:left;}
+section, footer {width:780px;padding:10px;}
+
+header {background:#79b;}
+  header a#logo {float:left;padding:5px;background:#79b;font-weight: bold;font-size:2em;font-family:'Droid sans';margin: 20px 0 20px 0;}
+    header a#logo span {color:#7fb;margin:200px 0 200px 10px;background:#79b;
+    text-shadow: -2px -2px 0 #456, 2px -2px 0 #456, -2px 2px 0 #456, 2px 2px 0 #456;}
+    header a#logo:hover, a#logo:visited, a#logo:link, a#logo:active {text-decoration: none;}
+
+header nav {background:#99c;clear:both;float:left;width:100%;}
+  header nav ul,
+  header nav ul li {float:left;}
+  header nav ul li a {background:#99c;color:#444;padding:10px;display:block;}
+  header nav ul li a:hover {background:#456;color:#fff;}
+  header nav ul li a.selected {background:#77a;color:#000;}
+
+section footer {background:none; height:auto;padding:0px 0px 0px 15px;}
+section {background:#eef;}
+footer {background:#99c;height:40px;}
+
+
+﻿/* forms */
+ol.forms { float:left; list-style: none; width: 100%; text-align:left;margin:0px;padding:0px;}
+
+ol.forms li { clear: both; float: left; margin: 0 0 10px; width: 100%; }
+ol.forms li.buttons { float: none; margin-left: 144px; width: auto; }
+ol.forms li.buttons input { width: auto; padding:4px; }
+
+ol.forms label { cursor: pointer; display: block; float: left; font-weight: bold; margin: 0px 8px 0 0; width: 10em; text-align:right; padding: 4px;}
+ol.forms input, ol.forms textarea { font: inherit; padding: 2px; width: 340px; }
+
+ol.forms textarea { height: 150px; }
+ol.forms textarea.short { height: 100px; }
+ol.forms input.small {width: 100px;}
+ol.forms input.med {width: 200px;}
+
+ol.forms input[type=checkbox] {margin:6px 6px 0px 0px;}
+
+ol.forms input[type=radio],
+ol.forms input[type=checkbox],
+ol.forms input[type=file] {width:auto;}
+
+
+/* Tables */
+table {
+	margin:0px;padding:0px;
+	width:100%;
+	box-shadow: 10px 10px 5px #888888;
+	border:1px solid #000000;
+
+	-moz-border-radius-bottomleft:5px;
+	-webkit-border-bottom-left-radius:5px;
+	border-bottom-left-radius:5px;
+
+	-moz-border-radius-bottomright:5px;
+	-webkit-border-bottom-right-radius:5px;
+	border-bottom-right-radius:5px;
+
+	-moz-border-radius-topright:5px;
+	-webkit-border-top-right-radius:5px;
+	border-top-right-radius:5px;
+
+	-moz-border-radius-topleft:5px;
+	-webkit-border-top-left-radius:5px;
+	border-top-left-radius:5px;
+
+  border-collapse: collapse;
+  border-spacing: 0;
+	width:100%;
+	height:100%;
+	margin:0px;padding:0px;
+}
+
+table tr:last-child td:last-child {
+	-moz-border-radius-bottomright:5px;
+	-webkit-border-bottom-right-radius:5px;
+	border-bottom-right-radius:5px;
+}
+table tr:first-child td:first-child {
+	-moz-border-radius-topleft:5px;
+	-webkit-border-top-left-radius:5px;
+	border-top-left-radius:5px;
+}
+table tr:first-child td:last-child {
+	-moz-border-radius-topright:5px;
+	-webkit-border-top-right-radius:5px;
+	border-top-right-radius:5px;
+}
+table tr:last-child td:first-child{
+	-moz-border-radius-bottomleft:5px;
+	-webkit-border-bottom-left-radius:5px;
+	border-bottom-left-radius:5px;
+}
+table tr:hover td{
+}
+
+table tr:nth-child(odd){ background-color:#ccc; }
+table tr:nth-child(even) {}
+table td{
+	vertical-align:text-top;
+	border:1px solid #000000;
+	border-width:0px 1px 1px 0px;
+	text-align:left;
+	padding:2px;
+	color:#000000;
+}
+table tr:last-child td{
+	border-width:0px 1px 0px 0px;
+}
+table tr td:last-child{
+	border-width:0px 0px 1px 0px;
+}
+table tr:last-child td:last-child{
+	border-width:0px 0px 0px 0px;
+}
+
+table tr th{
+		background:-o-linear-gradient(bottom, #7090b0 5%, #405060 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #7090b0), color-stop(1, #405060) );
+	background:-moz-linear-gradient( center top, #7090b0 5%, #405060 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#7090b0", endColorstr="#405060");	background: -o-linear-gradient(top,#7090b0,405060);
+
+	background-color:#7090b0;
+	border:0px solid #000000;
+	text-align:center;
+	border-width:0px 0px 1px 1px;
+	font-weight:bold;
+	color:#ffffff;
+}
+
+/* First line as header
+table tr:first-child td{
+		background:-o-linear-gradient(bottom, #7090b0 5%, #405060 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #7090b0), color-stop(1, #405060) );
+	background:-moz-linear-gradient( center top, #7090b0 5%, #405060 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#7090b0", endColorstr="#405060");	background: -o-linear-gradient(top,#7090b0,405060);
+
+	background-color:#7090b0;
+	border:0px solid #000000;
+	text-align:center;
+	border-width:0px 0px 1px 1px;
+	font-weight:bold;
+	color:#ffffff;
+}
+table tr:first-child:hover td{
+	background:-o-linear-gradient(bottom, #7090b0 5%, #405060 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #7090b0), color-stop(1, #405060) );
+	background:-moz-linear-gradient( center top, #7090b0 5%, #405060 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#7090b0", endColorstr="#405060");	background: -o-linear-gradient(top,#7090b0,405060);
+
+	background-color:#7090b0;
+}
+table tr:first-child td:first-child{
+	border-width:0px 0px 1px 0px;
+}
+table tr:first-child td:last-child{
+	border-width:0px 0px 1px 1px;
+}
+*/
+
+/*
+ * media queries for responsive design
+ * these follow after primary styles so they will successfully override.
+ */
+
+@media all and (orientation:portrait) {
+  /* style adjustments for portrait mode goes here */
+
+}
+
+@media all and (orientation:landscape) {
+  /* style adjustments for landscape mode goes here */
+
+}
+
+/* Grade-A Mobile Browsers (Opera Mobile, Mobile Safari, Android Chrome)
+   consider this: www.cloudfour.com/css-media-query-for-mobile-is-fools-gold/ */
+@media screen and (max-device-width: 480px) {
+	header, section, footer {width:480px; margin:0 auto 0 auto;text-align:left;}
+
+  /* uncomment if you don't want iOS and WinMobile to mobile-optimize the text for you
+     j.mp/textsizeadjust
+  html { -webkit-text-size-adjust:none; -ms-text-size-adjust:none; } */
+}
+
+/*
+Taken with thanks from
+- Chris Jones GitHub jonezy / github.com/jonezy/html-starter.git
+- Idan Seri Levi / csstablegenerator.com
+- Transit Network  Imageless CSS Buttons Simplified / cssbuttongenerator.com
+*/

@@ -1,0 +1,223 @@
+<link rel="stylesheet" href="/css/special_objects.css" media="screen" />
+<script type="text/javascript">
+/* ======================================================================== *\
+   Initialize websocket
+\* ======================================================================== */
+var host = window.document.location.host.replace(/:.*/, '');
+var ws = new WebSocket('ws://10.0.0.10:8080');
+
+// Format a websocket request
+function wsRequest(operation,parameters,request,id,event){
+  if(!operation) return;
+  // Escape user input through stringify function
+  var msg={
+    "opr":operation
+    ,"param":parameters
+    ,"receiver_id":id
+    ,"event":event
+    ,"req":request
+  };
+  // Send request
+  ws.send(JSON.stringify(msg));
+}
+
+// Initialize event watch list
+ws.onopen = function () {
+  // Add events to watch list  
+  wsRequest("watch","time","","clock");
+  wsRequest("watch","switch1","","switch1");
+  wsRequest("watch","switch2","","switch2");
+  wsRequest("watch","switch3","","switch3");
+  wsRequest("watch","switch4","","switch4");
+  wsRequest("watch","chat","","chat");
+  wsRequest("watch","php","","script_output");
+};
+
+ws.onerror = function (error) {
+  // an error occurred when sending/receiving data
+  obj=document.getElementById('log');
+  obj.innerHTML = error + " connection is closed" + "\n" + obj.innerHTML;
+  // Close and reconnect
+  // ...
+};
+
+// Handle incomming websockets mesages
+ws.onmessage = function (event) {
+  var obj={};
+  try {
+    var res=JSON.parse(event.data);
+// decodeURIComponent((event.data).replace(/\+/g, '%20'))
+    // Find recipient
+    if(!res.receiver_id) throw("No reveiver id");
+    obj = document.getElementById(res.receiver_id);
+    if(!obj) throw("Receiver ID '"+res.receiver_id +"' unknown");
+
+    // Special cases: Chat
+    if(res.receiver_id=='chat'){
+      obj.innerHTML = res.origin + ": " + res.data + "\n" + obj.innerHTML;
+
+    // Normal element update
+    }else if(res.html){
+      obj.outerHTML = res.html;
+    }else if(res.data){
+      obj.innerHTML = res.data;
+    }
+  } catch (e) {
+    // Add to log window
+    obj=document.getElementById('log');
+    obj.innerHTML = e + ": " + event.data + "\n" + obj.innerHTML;
+  }
+
+  // Log 
+  // Ignore time ticks
+  if(res.receiver_id!='clock'){
+    // Remove html code
+    if(!!res.html) res.html='*HTML*';
+    // Add to log window
+    obj=document.getElementById('log');
+    obj.innerHTML = JSON.stringify(res,null,2) + "\n" + obj.innerHTML;
+  }
+};
+
+/* ======================================================================== *\
+   Debug functions (to be removed)
+\* ======================================================================== */
+function debug(obj,max_depth) {
+  console.log("Debug: ",debug.prints(obj,max_depth));
+}  
+
+debug.depth=0; // Keep track og object depth
+debug.path=[];
+
+debug.prints = function (obj,max_depth) {
+    if(typeof(obj)!='object') return obj;
+    var result='';
+    var tab='';
+    if(!max_depth) max_depth=0;
+    for(i=0;i<debug.depth;i++) tab+='--';
+    for(var i in obj){
+	    // Mozilla bug when accessing document.domConfig
+	    if(i=='domConfig') continue;
+	    if(obj[i] instanceof Object){
+		    result+=tab+'['+i+']=>(object)('+debug.depth+','+max_depth+')\r\n';
+		    if(debug.depth<max_depth) {
+			    debug.depth++;
+			    result+=debug.prints(obj[i],max_depth);
+			    debug.depth--;
+		    }
+	    }else if(obj[i] instanceof Function)
+		    result+=tab+'['+i+']=>(Function)\r\n';
+	    else{
+		    str=''+obj[i];
+		    result+=tab+'['+i+']=>'+str.replace(/\</g,'&lt;')+"\r\n";
+	    }
+    }
+    return result;
+  }
+
+debug.finds = function (obj,needle,max_depth){
+    if(!(obj instanceof Object || obj instanceof Function)) return;
+    var result='';
+    if(!max_depth) max_depth=0;
+    if(debug.depth==0) path=[];
+    for(var i in obj){
+      if(i==needle){
+        for(var p in debug.path)
+          result+=debug.path[p]+'.';
+      result+=i+'\r\n';
+      }
+	    // Mozilla bug when accessing document.domConfig
+	    if(i=='domConfig') continue;
+	    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
+		    debug.depth++;
+        debug.path.push(i);
+		    result+=debug.finds(obj[i],needle,max_depth);
+		    debug.depth--;
+        debug.path.pop();
+	    }
+    }
+    return result;
+  }
+
+debug.find = function(obj,needle,max_depth){
+  console.log("Debug: ",debug.finds(obj,needle,max_depth));
+}
+
+/* ======================================================================== *\
+   Helper function for HTML actions
+\* ======================================================================== */
+// Run php script cmd.php
+function cmd(id,cmd){
+  wsRequest("php","cmd.php",{"cmd":cmd},id,id);
+  // focus input
+  document.forms[0].elements[1].focus();
+}
+
+// Run server (Demo) code
+function cmdjs(id,cmd){
+  wsRequest("staticFunc",cmd,'',id,id);
+  // focus input
+  document.forms[0].elements[1].focus();
+}
+
+// Chat send function
+function sc(){
+  if(!send.value.length) return;
+  wsRequest("chat",send.value,"chat","chat");
+  // Reset and focus input
+  send.value="";
+  document.forms["chat"].elements["send"].focus();
+}
+</script>
+
+<section>
+<H2>Websocket examples</H2>
+Open two separate browser windows displaying this page, to see the functionality.<br>
+This is an example made of HTML CSS3 Javascript and websocket.
+</section>
+
+<section>
+<h2>Clock</h2>This is a server generated event<br><br>
+<div id="clock" class="clock">Clock</div>
+</section>
+
+<section>
+<h2>Switches</h2>
+<br>PHP controled switches<br>
+<div id="switch1" class="on" onclick="cmd(this.id,this.id + ' off');">ON</div>
+<div id="switch2" class="on" onclick="cmd(this.id,this.id + ' off');">ON</div>
+<br><br>Server side Javascript controled switches<br>
+<div id="switch3" class="on" onclick="cmdjs(this.id,'off');">ON</div>
+<div id="switch4" class="on" onclick="cmdjs(this.id,'off');">ON</div>
+
+</section>
+
+<section>
+<h2>Chat</h2>
+<form name="chat" onsubmit="sc();return false">
+<textarea rows="10" cols="50" id="chat" readonly></textarea>
+<br>
+<input type="text" size=50 id="send" autofocus>
+<button type="submit">Send</button>
+</form>
+</section>
+
+<section>
+<h2>Command</h2>
+<form onsubmit="cmd('script_output',command.value); return false;">
+<div id="script_output"></div>
+<br>
+<input id="command" type="text" size=50 id="send">
+<button type="submit">Send</button>
+</form>
+</section>
+
+
+
+
+<section>
+<h2>Event log</h2>
+This shows all websocket activity on the client connection<br>
+<textarea rows="20" cols="50" id="log" readonly></textarea>
+</section>
+

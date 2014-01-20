@@ -11,12 +11,12 @@ You don't need to run two servers.
 
 This stack consists of:
 
-    -node.js: An event-based experimental server written in JavaScript and using googles V8 engine.
-    -express module: HTML static file server module for node
-    -WS websocket module for node
-    -PHP (so far. You can adapt it to a number of mature scripting language that can be run as CGI)
-    -a database of your choice. I experiment with the nonsql database ArangoDB (Not included this example)
-    -Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. You can easily adapt it to other platforms. 
+  *node.js: An event-based experimental server written in JavaScript and using googles V8 engine.
+  *express module: HTML static file server module for node
+  *WS websocket module for node
+  *PHP (so far. You can adapt it to a number of mature scripting language that can be run as CGI)
+  *A database of your choice. I experiment with the nonsql database ArangoDB (Not included this example)
+  *Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. You can easily adapt it to other platforms. 
 
 ##Background##
 
@@ -35,10 +35,10 @@ By coupling node, websockets, express webserver and PHP there are potential for 
 ##Status##
 
 This is Proof of concept. 
-  -There will be issues it you try to make it a production platform as is.
-  -If you want to run large off the shelf applications there will be issues as well.
-  -There are both security and performance issues.
-  -If this project turn out to be useful and people wish to join the project, all that will    eventually be ironed out
+  *There will be issues it you try to make it a production platform as is.
+  *If you want to run large off the shelf applications there will be issues as well.
+  *There are both security and performance issues.
+  *If this project turn out to be useful and people wish to join the project, all that will    eventually be ironed out
 
 ##PHP##
 

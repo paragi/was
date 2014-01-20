@@ -1,0 +1,41 @@
+{
+  "author": {
+    "name": "Simon Rigét",
+    "email": "simon.riget@gmail.com",
+    "url": "https://github.com/codemuncky"
+  },
+  "description": "Application Server is a stack using Node.js PHP-cgi WS websockets Express on linux",
+  "name": "WAS",
+  "version": "0.1.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codemuncky/was.git"
+  },
+  "keywords": [
+    "Node.js",
+    "PHP",
+    "WS",
+    "websockets",
+    "Express",
+    "PHP-burner",
+    "burner",
+    "js",
+    "node"
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/mit-license.php"
+    },
+  "dependencies": {
+    "ini": "~1.1.0",
+    "express": "~3.4.7",
+    "ws": "~0.4.31",
+    "cron": "~1.0.1"
+  },
+ "readmeFilename": "README.md"
+}
