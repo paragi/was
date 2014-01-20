@@ -39,6 +39,7 @@ Node JS contains the nice node package manager npm. Use it to install 3 modules:
     $ npm install express ws ini
 
 Get the WAS application:  
+
     $ wget https://github.com/codemuncky/was/archive/master.zip
     $ unzip master.zip
     $ mv was-master/* ./
