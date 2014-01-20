@@ -24,7 +24,7 @@ Install node JS on your system
 There are several ways to do it:  
 On Derbian/Ubuntu:  
 
-    $ sudo apt-get install npm php5-cgi
+    $ sudo apt-get install npm php5-cgi php5-json
 
 Make sure you get a fairly recent version for your distribution. At least ver 0.10.X
 Test with:
@@ -39,14 +39,17 @@ Node JS contains the nice node package manager npm. Use it to install 3 modules:
     $ npm install express ws ini
 
 Get the WAS application:  
-
-    $ wget https://github.com/codemuncky/was.git
+    $ wget https://github.com/codemuncky/was/archive/master.zip
+    $ unzip master.zip
+    $ mv was-master/* ./
+    $ rm -r was-master
+    $ rm master.zip
 
 Run the server:  
 
     $ node server.js
 
-Use a browser to access the server on port 8080 eg. localhost:8080  
+Use a browser to access the server on port 8080 eg. 127.0.0.1:8080  
 
 Change settings in node-was.conf
 
