@@ -6,8 +6,8 @@ In this case PHP, running on linux. With a database of your choice.
 Install it, run the server and browse the example application.
 This example is intended for a small stand alone web application. 
 
-The nice part of this is that all can be served on  port 80 or 443. 
-You don't need to run two servers.
+The nice part is that this server serves all on port 80 or 443. 
+You don't need to run other servers.
 
 This stack consists of:
 
