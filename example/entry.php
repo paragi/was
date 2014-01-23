@@ -22,7 +22,7 @@
   //  ,"Tests"=>"tests.php"
     ,"Server status"=>"server_status.html"
   //  ,"Documentation"=>"doc.html"
-    ,"Style overwiev"=>"style_overwiev.html"
+  //  ,"Style overwiev"=>"style_overwiev.html"
     ,"History"=>"history.html"
     ,"License"=>"license.html"
 
