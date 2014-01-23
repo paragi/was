@@ -1,6 +1,7 @@
 npm-debug.log
 node_modules
 .*.swp
+*~
 .lock-*
 build
 noter.js
@@ -8,4 +9,6 @@ socket.txt
 wss.txt
 example/test.html
 example/test1.php
+src
+
 

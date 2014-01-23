@@ -25,9 +25,7 @@ todo:
   -Make library for script support
 
 \* ======================================================================== */
-
 var version='0.1.0 - Proof of concept';
-var mumble=false; // make the server to output samples of whats going on
 
 /* ======================================================================== *\
    Debug functions (to be removed)
@@ -116,10 +114,17 @@ var WebSocketServer = require('ws').Server;
 \* ======================================================================== */
 var config = ini.parse(fs.readFileSync('node-was.conf', 'utf-8'))
 // Sainitize and validate
-if(config.ip == undefined) config.ip='0.0.0.0';
+if(config.ip == undefined)
+// Set lisner ip option
+if(config.external_access.toLowerCase() == 'yes')
+  config.ip='0.0.0.0';
+else
+  config.ip='127.0.0.1';
+// Set lisner port
 if(config.port == undefined) config.port=8080;
 if(config.maxReqBodySize == undefined) config.maxReqBodySize=1000;
 if(config.docRoot == undefined) config.docRoot="public";
+var mumble=(config.mode=='debug'); // make the server to output samples of whats going on
 // Resolve path 
 config.docRoot=path.normalize(config.docRoot);
 if(config.docRoot.charAt(0) != '/') config.docRoot = __dirname + "/" + config.docRoot;
@@ -133,12 +138,13 @@ console.log("===================================================================
 console.log("PHP-burner version: " + version);
 
 // Catch errors
-process.on('uncaughtExceptionX', function (err) {
-    console.error('An uncaughtException:');
-    console.error(err);
-    // process.exit(1);
-});
-
+if(config.mode!='debug'){
+  process.on('uncaughtException', function (err) {
+      console.error('An uncaughtException:');
+      console.error(err);
+      // process.exit(1);
+  });
+}
 
 /* ======================================================================== *\
    Configure express 
@@ -216,28 +222,28 @@ app.all(/\.php/, function(request, response, next) {
       response.setHeader("Content-Type", "text/html");
       
       // Compose client information
-      var env = {};
-      env.header = request.headers;
-      env.pathname = request._parsedUrl.pathname;
-      env.query = request.query
-      env.remoteaddress = request.client.remoteAddress;
-      env.remoteport = request.client.remotePort;
-      env.url=request.url;
-      env.method=request.method;
-      env.httpversion=request.httpVersion
-      env.docroot=config.docRoot;
+      var connection = {};
+      connection.header = request.headers;
+      connection.pathname = request._parsedUrl.pathname;
+      connection.query = request.query
+      connection.remoteaddress = request.client.remoteAddress;
+      connection.remoteport = request.client.remotePort;
+      connection.url=request.url;
+      connection.method=request.method;
+      connection.httpversion=request.httpVersion
+      connection.docroot=config.docRoot;
 
-      env.body=request.body;
-      env.files={};
+      connection.body=request.body;
+      connection.files={};
       for(var f in request.files){
-        env.files[f]={};
-        env.files[f].name=request.files[f].name;
-        env.files[f].size=request.files[f].size;
-        env.files[f].tmp_name=request.files[f].path;
-        env.files[f].type=request.files[f].type;
+        connection.files[f]={};
+        connection.files[f].name=request.files[f].name;
+        connection.files[f].size=request.files[f].size;
+        connection.files[f].tmp_name=request.files[f].path;
+        connection.files[f].type=request.files[f].type;
       }
-      // console.log("env :");
-      // console.log(env);
+      // console.log("connection :");
+      // console.log(connection);
 
       // Start PHP process
       var spawn = require("child_process").spawn;
@@ -245,10 +251,11 @@ app.all(/\.php/, function(request, response, next) {
       php = spawn('php-cgi',['php_burner.php']);
 
       //Transfer header to php stdin
-      php.stdin.write(JSON.stringify(env));
+      php.stdin.write(JSON.stringify(connection));
       php.stdin.end();
 
       // Catch output from PHP scrit and send it to client
+      // NB: Can't use send with streams. Must use write. (express will autoend)
       php.stdout.on('data', function (data) {
         // Add headers from PHP  
         if(!response.headersSent){
@@ -256,7 +263,7 @@ app.all(/\.php/, function(request, response, next) {
           var header=true; 
           var line = data.toString().split("\r\n");
           for(var i in line){
-            if(header){
+            if(header && !response.headersSent){
               if(line[i].length >0){
                 // Split header into name and value
                 var split = line[i].indexOf(":");
@@ -265,10 +272,10 @@ app.all(/\.php/, function(request, response, next) {
                 header=false;
             }else
               // End header and send body
-              response.send(line[i]);
+              response.write(line[i]);
           }
         }else
-          response.send(data);
+          response.write(data);
 
       });
 
@@ -280,8 +287,13 @@ app.all(/\.php/, function(request, response, next) {
 
       // Catch error output from PHP scrit and send it to client
       php.stderr.on('data', function (data) {
-        response.send(data.toString());
+        // Error messages might come before the header is set.
+        if(!response.headersSent){
+          response.header('Content-Type', 'text/plain');
+        }
+        response.write(data.toString());
       });
+
     } else {
       // File not found
       if(mumble) console.log("  I don't know that file");
@@ -548,26 +560,26 @@ eventHandler.setTimer=function(req,callback){
 // Execute script to handle PHP request
 eventHandler.php = function(req,callback){
 
-  // Compose request envrmation
-  var env = {};
-  env.pathname = req.param;
-  env.wsquery = req.req;
-  env.remoteaddress = req.socket._socket.remoteAddress;
-  env.remoteport = req.socket._socket.remotePort;
-  env.url=req.socket.upgradeReq.url;
-  env.method='websocket';
-  env.docroot=config.docRoot;
-  env.header =req.socket.upgradeReq.headers;
-  env.httpversion=req.socket.httpVersion
+  // Compose request information
+  var connection = {};
+  connection.pathname = req.param;
+  connection.wsquery = req.req;
+  connection.remoteaddress = req.socket._socket.remoteAddress;
+  connection.remoteport = req.socket._socket.remotePort;
+  connection.url=req.socket.upgradeReq.url;
+  connection.method='websocket';
+  connection.docroot=config.docRoot;
+  connection.header =req.socket.upgradeReq.headers;
+  connection.httpversion=req.socket.httpVersion
 
-  //console.log({"env":env});
+  //console.log({"connection":connection});
 
   // Start PHP process
   var spawn = require("child_process").spawn;
   php = spawn('php-cgi',['php_burner.php']);
 
   //Transfer request to php stdin
-  php.stdin.write(JSON.stringify(env));
+  php.stdin.write(JSON.stringify(connection));
   php.stdin.end();
 
   req.header=true; 
