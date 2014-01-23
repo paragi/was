@@ -12,6 +12,8 @@ Version 0.1:  Simon Rigét - Basic funtionalaty in place.
 
 todo: 
       fake header()
+   set ini open_basedir
+      remove $_ENV (programds can use getenv();
 
 See copyrights notes in licese.txt (MIT licence)
 \* ======================================================================== */
@@ -34,9 +36,9 @@ $request=json_decode(file_get_contents("php://stdin"),true);
 
 // _ENV
 // All enviroment variables are now in the _SERVER array
-$_ENV=$_SERVER;
-
+// $_ENV=$_SERVER;
 // _SERVER
+$path=$_SERVER['PATH'];
 // Clear array
 unset($_SERVER);
 $argc=0;
@@ -73,7 +75,7 @@ $_SERVER['SCRIPT_NAME']=$request['pathname'];
 $_SERVER['DOCUMENT_ROOT']=@$request['docroot'];
 $_SERVER['PHP_SELF']=$request['pathname'];
 $_SERVER['SCRIPT_FILENAME']=$_SERVER['DOCUMENT_ROOT'] . $_SERVER['SCRIPT_NAME'];
-$_SERVER['PATH']=$_ENV['PATH'];
+$_SERVER['PATH']=$path;
 
 // Add some predefined settings
 $_SERVER['GATEWAY_INTERFACE']=$sw_name;
@@ -108,7 +110,7 @@ $_REQUEST=(array)$_GET + (array)$_POST + (array)$_COOKIE + (array)@$request['wsq
     Go
 \* ======================================================================== */
 // Clean up
-unset($key,$val,$line,$request,$sw_name,$default_script);
+unset($key,$val,$line,$request,$sw_name,$default_script,$path);
 
 // Run script
 if(realpath($_SERVER['SCRIPT_FILENAME'])){

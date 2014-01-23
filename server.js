@@ -220,7 +220,7 @@ app.all(/\.php/, function(request, response, next) {
 
       // set content type text/html ?
       response.setHeader("Content-Type", "text/html");
-      
+   
       // Compose client information
       var connection = {};
       connection.header = request.headers;

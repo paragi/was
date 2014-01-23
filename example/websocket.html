@@ -3,8 +3,8 @@
 /* ======================================================================== *\
    Initialize websocket
 \* ======================================================================== */
-var host = window.document.location.host.replace(/:.*/, '');
-var ws = new WebSocket('ws://10.0.0.10:8080');
+// Open websocket to page server
+var ws = new WebSocket('ws://'+window.document.location.host);
 
 // Format a websocket request
 function wsRequest(operation,parameters,request,id,event){
