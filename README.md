@@ -1,15 +1,12 @@
-#Websocket Application Server (WAS) using node JS and PHP#
+#Websocket Application Server (WAS)#
+###using node.JS and PHP###
 
-WAS is a webserver with websocket and a mature scripting language.
-In this case PHP, running on linux. With a database of your choice.
+WAS is a webserver with suppoert of websockets and a mature scripting language; In this case PHP.  
+All i run on the same server from one port.
 
-Install it, run the server and browse the example application.
-This example is intended for a small stand alone web application. 
+Install it, run the server and browse the example application.  
 
-The nice part is that this server serves all on port 80 or 443. 
-You don't need to run other servers.
-
-This stack consists of:
+###This stack consists of:###
 
 * node.js: An event-based experimental server written in JavaScript and using googles V8 engine.
 * express module: HTML static file server module for node
@@ -21,25 +18,24 @@ Tested on Wheezy linux as used on the Raspberry PI, which is a Debian warranty. 
 
 ##Installation##
   
-  __At the moment These instruction not complete. Only works with node v0.10.2__
-
-
-Install node JS on your system  
-There are several ways to do it:  
-On Derbian/Ubuntu:  
+2014.01.23: For Raspberry PI you have to install nodejs ver 0.10.2 manually
+  
+Install node JS on your system. On Derbian/Ubuntu:  
 
     $ sudo apt-get install npm php5-cgi php5-json
 
 Make sure you get a fairly recent version for your distribution. At least ver 0.10.X
 Test with:
 
-    $node -v
+    $nodejs -v
 
 Create a project directory.
-Node JS contains the nice node package manager npm. Use it to install 3 modules: 
 
     $ mkdir yourdir
     $ cd yourdir
+  
+Node JS contains the nice node package manager npm. Use it to install 3 modules: 
+
     $ npm install express ws ini
 
 Get the WAS application:  
@@ -52,12 +48,13 @@ Get the WAS application:
 
 Run the server:  
 
-    $ node server.js
+    $ nodejs server.js
 
 Use a browser to access the server on port 8080 eg. 127.0.0.1:8080  
 
 Change settings in node-was.conf
 
+To start and monitor the server, install and use the upstart package 
 
 ##PHP##
 
@@ -66,8 +63,8 @@ PHP support is achieved using php-cgi and by transfering request data to a scrip
 ##Status##
 
 This is Proof of concept. 
-* There will be issues it you try to make it a production platform as is.
-* If you want to run large off the shelf applications there will be issues as well.
+* There will be issues it you use it in production.
+* If you want to run large off the shelf applications there will likely be issues.
 * There are both security and performance issues.
 * If this project turn out to be useful and people wish to join it, all that will eventually be ironed out
 
