@@ -10,7 +10,7 @@
 <body>
 
 <header class="clearfix">
-<a href="" id="logo"><span>Websocket Application Server</span></a>
+<a href="/" id="logo"><span>Websocket Application Server</span></a>
 
 <?php
   // Pages

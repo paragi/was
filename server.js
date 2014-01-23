@@ -22,7 +22,8 @@ todo:
   -apply spare workers for PHP to speed up response time.
   -Try using express view engine instead og middleware for PHP scripts. Find a
     way around require file.
-  -Make library for script support
+  -Make a library out of script support + add other scripting languages
+  -Make a library out of websocket event handeling
 
 \* ======================================================================== */
 var version='0.1.0 - Proof of concept';
@@ -38,7 +39,7 @@ debug.depth=0; // Keep track og object depth
 debug.path=[];
 
 debug.prints = function (obj,max_depth) {
-    if(typeof(obj)!='object') return obj;
+  if(typeof(obj)!='object') return obj;
   var result='';
   var tab='';
   if(!max_depth) max_depth=0;
@@ -64,29 +65,29 @@ debug.prints = function (obj,max_depth) {
 }
 
 debug.finds = function (obj,needle,max_depth){
-    if(!(obj instanceof Object || obj instanceof Function)) return;
-    var result='';
-    if(!max_depth) max_depth=0;
-    if(debug.depth==0) path=[];
-    for(var i in obj){
-      if(i==needle){
-        for(var p in debug.path) result+=debug.path[p]+'.';
-        result+=i+'*\r\n';
-      }
-	    // Mozilla bug when accessing document.domConfig
-	    if(i=='domConfig') continue;
-      // Go deeper
-	    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
-		    debug.depth++;
-        debug.path.push(i);
-		    result+=debug.finds(obj[i],needle,max_depth);
-		    debug.depth--;
-        debug.path.pop();
-	    }
+  if(!(obj instanceof Object || obj instanceof Function)) return;
+  var result='';
+  if(!max_depth) max_depth=0;
+  if(debug.depth==0) path=[];
+  for(var i in obj){
+    if(i==needle){
+      for(var p in debug.path) result+=debug.path[p]+'.';
+      result+=i+'*\r\n';
     }
-    if(debug.depth==0 && result=='') result="not found";
-    return result;
+    // Mozilla bug when accessing document.domConfig
+    if(i=='domConfig') continue;
+    // Go deeper
+    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
+	    debug.depth++;
+      debug.path.push(i);
+	    result+=debug.finds(obj[i],needle,max_depth);
+	    debug.depth--;
+      debug.path.pop();
+    }
   }
+  if(debug.depth==0 && result=='') result="not found";
+  return result;
+}
 
 debug.find = function(obj,needle,max_depth){
   console.log("Debug: ",debug.finds(obj,needle,max_depth));
@@ -124,7 +125,7 @@ else
 if(config.port == undefined) config.port=8080;
 if(config.maxReqBodySize == undefined) config.maxReqBodySize=1000;
 if(config.docRoot == undefined) config.docRoot="public";
-var mumble=(config.mode=='debug'); // make the server to output samples of whats going on
+var mumble=(config.debug_mode.toLowerCase()[0]=='y'); // make the server to output samples of whats going on
 // Resolve path 
 config.docRoot=path.normalize(config.docRoot);
 if(config.docRoot.charAt(0) != '/') config.docRoot = __dirname + "/" + config.docRoot;
@@ -138,7 +139,7 @@ console.log("===================================================================
 console.log("PHP-burner version: " + version);
 
 // Catch errors
-if(config.mode!='debug'){
+if(config.debug_mode.toLowerCase()[0]=='y'){
   process.on('uncaughtException', function (err) {
       console.error('An uncaughtException:');
       console.error(err);
