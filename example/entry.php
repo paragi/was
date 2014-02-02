@@ -62,7 +62,7 @@
 
 <footer>
 Version 0.1.0 - Proff of concept<br>
-(c) Simon Rigét 2013 MIT License
+(c) Simon Rigét 2013 / Paragi MIT License
 </footer>
 
 </body>

@@ -104,7 +104,7 @@ if($_SERVER['HTTP_COOKIE_PARSE_RAW'])
   }
 
 // _REQUEST
-$_REQUEST=(array)$_GET + (array)$_POST + (array)$_COOKIE + (array)@$request['wsquery'];
+$_REQUEST=(array)$_GET + (array)$_POST + (array)$_COOKIE;
 
 /* ======================================================================== *\
     Go

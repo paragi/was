@@ -1,12 +1,12 @@
-/* ======================================================================== *\
-   Application server for node.js and PHP
+/*============================================================================*\
+  Application server for node.js and PHP
 
-   A small and fast event driven application engine for a standalone server
-   utilizing PHP and websocket 
+  A small and fast event driven application engine for a standalone server
+  utilizing PHP and websocket 
 
-   Developed for the Raspberry PI linux platform.
+  Developed for the Raspberry PI linux platform.
 
-   By Simon Rigét 2013 (c) MIT License 
+  By Simon Rigét 2013 (c) MIT License 
 
   Design bias:
   This implementation runs mostly silently and without logging, since there is
@@ -16,21 +16,21 @@
   The number of error messages are kept on a minimum.
   if you add logging etc. please make it easy to turn it completely off.
 
-todo:
+  todo:
   -file upload temp file clean up + php move tmp file accept (rename to php...)
   -PHP headers not quiet right yet
   -apply spare workers for PHP to speed up response time.
   -Try using express view engine instead og middleware for PHP scripts. Find a
-    way around require file.
+  way around require file.
   -Make a library out of script support + add other scripting languages
   -Make a library out of websocket event handeling
 
-\* ======================================================================== */
+\*============================================================================*/
 var version='0.1.0 - Proof of concept';
 
-/* ======================================================================== *\
-   Debug functions (to be removed)
-\* ======================================================================== */
+/*============================================================================*\
+  Debug functions (to be removed)
+\*============================================================================*/
 function debug(obj,max_depth) {
   console.log("Debug: ",debug.prints(obj,max_depth));
 }  
@@ -47,8 +47,8 @@ debug.prints = function (obj,max_depth) {
   for(var i in obj){
     // Mozilla bug when accessing document.domConfig
     if(i=='domConfig') continue;
-    if(typeof(obj[i]) == "object"){
-	    result+=tab+'['+i+']=>(object)('+debug.depth+','+max_depth+')\r\n';
+    if(typeof(obj[i]) === "object"){
+	    result+=tab+'['+i+']=>\r\n';
 	    if(debug.depth<max_depth) {
 		    debug.depth++;
 		    result+=debug.prints(obj[i],max_depth);
@@ -65,19 +65,20 @@ debug.prints = function (obj,max_depth) {
 }
 
 debug.finds = function (obj,needle,max_depth){
-  if(!(obj instanceof Object || obj instanceof Function)) return;
+  if(typeof(obj) !=="object") return "Not an object\n";
   var result='';
   if(!max_depth) max_depth=0;
   if(debug.depth==0) path=[];
   for(var i in obj){
-    if(i==needle){
+    // Match
+    if(i.toLowerCase()==needle.toLowerCase()){
       for(var p in debug.path) result+=debug.path[p]+'.';
-      result+=i+'*\r\n';
+      result+= i+'\r\n';
     }
     // Mozilla bug when accessing document.domConfig
     if(i=='domConfig') continue;
     // Go deeper
-    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
+    if(typeof(obj[i])==="object" && debug.depth<max_depth) {
 	    debug.depth++;
       debug.path.push(i);
 	    result+=debug.finds(obj[i],needle,max_depth);
@@ -85,18 +86,18 @@ debug.finds = function (obj,needle,max_depth){
       debug.path.pop();
     }
   }
-  if(debug.depth==0 && result=='') result="not found";
+  if(debug.depth==0 && !result) result="not found";
   return result;
 }
 
 debug.find = function(obj,needle,max_depth){
-  console.log("Debug: ",debug.finds(obj,needle,max_depth));
+  console.log("Find: ",debug.finds(obj,needle,max_depth));
 }
 
 
-/* ======================================================================== *\
-   Load modules
-\* ======================================================================== */
+/*============================================================================*\
+  Load modules
+\*============================================================================*/
 var http = require("http");
 //var https = require('https');
 var url = require("url");
@@ -110,9 +111,9 @@ var express = require('express');
 //var formidable = require('formidable');
 var WebSocketServer = require('ws').Server;
 
-/* ======================================================================== *\
-   Read configuration
-\* ======================================================================== */
+/*============================================================================*\
+  Read configuration
+\*============================================================================*/
 var config = ini.parse(fs.readFileSync('node-was.conf', 'utf-8'))
 // Sainitize and validate
 if(config.ip == undefined)
@@ -136,10 +137,10 @@ if(path.length == 1) {
 
 // console.log("Configuration:\n" + JSON.stringify(config,null,1));
 console.log("========================================================================");
-console.log("PHP-burner version: " + version);
+console.log("WAS version: " + version);
 
 // Catch errors
-if(config.debug_mode.toLowerCase()[0]=='y'){
+if(config.debug_mode.toLowerCase().charAt(0)!='y'){
   process.on('uncaughtException', function (err) {
       console.error('An uncaughtException:');
       console.error(err);
@@ -147,12 +148,12 @@ if(config.debug_mode.toLowerCase()[0]=='y'){
   });
 }
 
-/* ======================================================================== *\
-   Configure express 
+/*============================================================================*\
+  Configure express 
 
-   NB: The order of applying attributes will in some cases be reflected in 
-   the order off its execution.
-\* ======================================================================== */
+  NB: The order of applying attributes will in some cases be reflected in 
+  the order off its execution.
+\*============================================================================*/
 var app = express();
 
 app.disable('x-powered-by');
@@ -169,15 +170,15 @@ app.use(express.urlencoded());
 app.use(express.methodOverride());
 
 // Choose error handler
-if(config.mode == 'debug')
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-else
+if(config.debug_mode.toLowerCase().charAt(0)=='y'){
+//  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+}else{
   // Production 
-  app.use(express.errorHandler());
-
-/* ======================================================================== *\
-   Set up routing serviceses (Middle ware)
-\* ======================================================================== */
+  //app.use(express.errorHandler());
+}
+/*============================================================================*\
+  Set up routing serviceses (Middle ware)
+\*============================================================================*/
 // Add websockets 
 var server = http.createServer(app);
 var wss = new WebSocketServer({server: server});
@@ -213,29 +214,109 @@ if(config.defaultRootDocument != undefined){
 
 // Add PHP support
 app.all(/\.php/, function(request, response, next) {
-  // Check if resuested file exists
-  fs.exists(config.docRoot + request._parsedUrl.pathname, function(exists){
-    if (exists) {
-      response.status(200);
-      // Send response header
+  var debug=true;
 
-      // set content type text/html ?
-      response.setHeader("Content-Type", "text/html");
-   
-      // Compose client information
-      var connection = {};
-      connection.header = request.headers;
-      connection.pathname = request._parsedUrl.pathname;
-      connection.query = request.query
-      connection.remoteaddress = request.client.remoteAddress;
-      connection.remoteport = request.client.remotePort;
-      connection.url=request.url;
-      connection.method=request.method;
-      connection.httpversion=request.httpVersion
-      connection.docroot=config.docRoot;
+  // Save responce in scope with a closure function
+  (function(res) {
+    nscript.launch('php',request,function(event,data,param){
+      switch (event){
+      case 'status':
+        res.status(data);
+        if(debug) console.log("Status: %s",data);
+        break;
+      case 'header':
+        res.setHeader(data,param);
+        if(debug) console.log("Header: '%s: %s'",data,param);
+        break;
+      case 'data':
+        res.write(data);
+        if(debug){ 
+          if(data.toString().length<100)
+            console.log("Data: '%s'",data);
+          else
+            console.log("Data: *** length: ",data.length);
+        }
+        break;
+      case 'end':
+        res.end();
+        if(debug) console.log("End of request");
+        break;
+      case 'error':
+        if(mumble) console.log('Node Scripting launcher error: %s',data);
+        nreak;
+      default:
+        if(debug) console.log("Unknown event: '%s'",event);
+      }
+    });
+  })(response);
+});
 
-      connection.body=request.body;
-      connection.files={};
+
+// Apply static page server for the rest
+app.use(express.static(config.docRoot));
+app.use(express.favicon(config.docRoot + '/favicon.ico')); 
+console.log("Serving static files at: " + config.docRoot);
+
+/*============================================================================*\
+  Start listening
+\*============================================================================*/
+// Listen on PORT and call function on incomming requests
+server.listen(config.port,config.ip);
+console.log("Server listening at: " + config.ip + ":" + config.port );
+console.log("========================================================================");
+
+
+/*============================================================================*\
+   Node Script launcher
+
+   Library to launch script languages
+
+   Callbacks
+     on status 
+     on header
+     on data including error (Make a config parameter to exclude stderr)
+     on end
+     on error ?
+
+   Make sure on header can't be called after on data (Scrap headers or put them in data)
+
+   have separate support for websockets and static
+     
+   Treat static and websocket requests differantly:
+     ws has no headers 
+     ws has a differant request structure   
+    
+
+\*============================================================================*/
+var nscript={};
+nscript.launcher={};
+nscript.docRoot = config.docRoot || './';
+nscript.defaultRootDocument = config.defaultRootDocument;
+
+nscript.launch = function(type,request,callback){
+
+  //Check that callback are a function
+  if(!(nscript.launcher[type] instanceof Function)){
+    callback('error','NSL has no support for script of type: ' + type);
+    return;
+  }
+
+  //Compose information on client request
+  var connection = {};
+  connection.files={};
+
+  try{
+    // support for express request
+    if(!!request._parsedUrl){
+      connection.header = request.headers || '';
+      connection.pathname = request._parsedUrl.pathname || '';
+      connection.query = request.query || ''
+      connection.remoteaddress = request.client.remoteAddress || '';
+      connection.remoteport = request.client.remotePort || '';
+      connection.url=request.url || '';
+      connection.method=request.method || '';
+      connection.httpversion=request.httpVersion || '';
+      connection.body=request.body || '';
       for(var f in request.files){
         connection.files[f]={};
         connection.files[f].name=request.files[f].name;
@@ -243,82 +324,162 @@ app.all(/\.php/, function(request, response, next) {
         connection.files[f].tmp_name=request.files[f].path;
         connection.files[f].type=request.files[f].type;
       }
-      // console.log("connection :");
-      // console.log(connection);
 
-      // Start PHP process
-      var spawn = require("child_process").spawn;
-      var arg=['php_burner.php'];
-      php = spawn('php-cgi',['php_burner.php']);
+    // Support for WS (Websockets)
+    }else if(!!request.socket.upgradeReq){
+      connection.remoteaddress = request.socket._socket.remoteAddress || '';
+      connection.remoteport = request.socket._socket.remotePort || '';
+      connection.url=request.socket.upgradeReq.url || '';
+      connection.header =request.socket.upgradeReq.headers || '';
+      connection.httpversion=request.socket.upgradeReq.httpVersion || '';
 
-      //Transfer header to php stdin
-      php.stdin.write(JSON.stringify(connection));
-      php.stdin.end();
+      // WAS support
+      connection.method='WS';
+      connection.pathname = request.pathname;
+      connection.query = request.query;
+    // Unsupported resuest type
+    }else{
+      callback('error',"Unrecognized request type. Can't find client information");
+      return;
+    }
 
-      // Catch output from PHP scrit and send it to client
-      // NB: Can't use send with streams. Must use write. (express will autoend)
-      php.stdout.on('data', function (data) {
-        // Add headers from PHP  
-        if(!response.headersSent){
-          // Assume PHP always send at least one header
-          var header=true; 
-          var line = data.toString().split("\r\n");
-          for(var i in line){
-            if(header && !response.headersSent){
-              if(line[i].length >0){
-                // Split header into name and value
-                var split = line[i].indexOf(":");
-                response.setHeader(line[i].substr(0,split),line[i].substr(split+2));
-              }else if(i>0) 
-                header=false;
-            }else
-              // End header and send body
-              response.write(line[i]);
-          }
-        }else
-          response.write(data);
+  }catch(e){
+    callback('error',"Unrecognized request type: "+ e);
+    return;
+  }
 
-      });
+  // Add basic information
+  connection.docroot=nscript.docRoot;
 
-      // On the last output, end request
-      php.stdout.on('end', function () {
-        //console.log('PHP child process ended');
-        response.end();
-      });
+  // Validate path name
+  // Check/Make pathname a full path from from document root
+  if(connection.pathname.charAt(0) !='/') connection.pathname = '/' + connection.pathname;
+  // Use default script
+  if(connection.pathname.length <2) connection.pathname = nscript.defaultRootDocument;
+  // Check that script exists
+  fs.exists(nscript.docRoot + connection.pathname, function(exists){
+    if (exists) {
+      // Send status OK
+      callback('status',200);
 
-      // Catch error output from PHP scrit and send it to client
-      php.stderr.on('data', function (data) {
-        // Error messages might come before the header is set.
-        if(!response.headersSent){
-          response.header('Content-Type', 'text/plain');
-        }
-        response.write(data.toString());
-      });
-
-    } else {
-      // File not found
-      if(mumble) console.log("  I don't know that file");
-      response.send(404);
+      // Launch script
+      nscript.launcher[type](connection,callback);
+    }else{
+      // Send status Not found
+      callback('status',404);
     }
   });
+}
 
-})
+ 
+/*============================================================================*\
+  PHP cgi support
 
-// Apply static page server for the rest
-app.use(express.static(config.docRoot));
-app.use(express.favicon(config.docRoot + '/favicon.ico')); 
-console.log("Serving static files at: " + config.docRoot);
+  Using the command php-cgi  
+  Using the script php_burner.php as a launcher script
+   
 
-/* ======================================================================== *\
-   Start listening
-\* ======================================================================== */
-// Listen on PORT and call function on incomming requests
-server.listen(config.port,config.ip);
-console.log("Server listening at: " + config.ip + ":" + config.port );
-console.log("========================================================================");
+  Quirks:
+    1. pgp-cgi might send error text formatted in HTML before the headers
+      Fix: 1. set a default header Content-type: text/html and remove duplicates
+           2. error messages must be stores until headers are send.
+    2. php-cgi might send a header i one block and the line ending in another
+      Fix: buffer all headers until end of header section are received
+    3. the phpinfo() function requests pseudo pages for logo images.
+
+    for strange 404 see http://woozle.org/~neale/papers/php-cgi.html
+
+  Maximum header section length is hardcoded to 4K, to prevent unreasonable 
+  memory usages. Are there any reason for a larger buffer size?
+  Maximum error body length are hardcoded to 4K too
+\*============================================================================*/
+nscript.launcher.php = function(connection,callback) {
+  // Start child process
+  var proc = require("child_process").spawn('php-cgi',['php_burner.php']);
+
+  //Transfer connection request informastion to stdin
+  proc.stdin.write(JSON.stringify(connection));
+  proc.stdin.end();
+
+  // Get ready for output from the process
+  function handleOutput(proc,callback){
+    var buffer='';
+    var bbuffer='';
+    var eoh=-1;
+    var headersSent=false;
+    var end=false;
+    var headers={'Content-type':'text/html'}; // Fix 1.1
+
+    // Catch output from scrit and send it to client
+    proc.stdout.on('data', function (data) {
+      if(end) return;
+
+      // Headers. Assume script always send at least one header
+      if(!headersSent){
+        // Store headers until a end of header is receiverd (\r\n\r\n) Strip \r
+        buffer+=data.toString().replace(/\r/g,'');
+        // Look for end of header section
+        eoh=buffer.indexOf('\n\n');
+        if(eoh>0 || buffer.length > 4096){
+          // Separate headers from body parts
+          bbuffer+=buffer.substr(eoh+2);
+          buffer=buffer.substr(0,eoh+1);
+
+          // Divide heades lines  
+          var div =-1;
+          var line=buffer.split('\n');
+          for(var i in line){
+            // Split header into key, value pairs
+            div = line[i].indexOf(":");
+            if(div>0)
+              // remove dublicate headers so that last one counts
+              headers[ line[i].substr(0,div) ] = line[i].substr(div+2);
+          }
+
+          // Send headers
+          for(var i in headers)
+            callback('header',i,headers[i]);
+          headersSent=true;
+
+          // Send body part if any
+          if(bbuffer.length>0){
+            callback('data',bbuffer);
+            bbuffer='';
+          }
+        }
+      
+      // Body
+      }else
+        callback('data',data);
+    });
+
+    // Error. Catch standart error output from script
+    proc.stderr.on('data', function (data) {
+      if(end) return;
+      // Fix 1.2 Store error messages until headers are sent
+      if(!headersSent){
+        if(bbuffer.length<4096)
+          bbuffer+=data.toString();
+      }else
+        callback('data',data.toString());
+    });
+
+    // End request
+    proc.stdout.on('end', function () {
+      if(bbuffer.length>0)
+        callback('data',bbuffer);
+      end=true;
+      callback('end');
+    });
+  }
+
+  handleOutput(proc,callback);
+
+}
 
 
-/*======================================================================== *\
+
+/*============================================================================*\
   Websocket event handler
 
   In this websocket implementation all actions and responces are treated as 
@@ -354,20 +515,8 @@ console.log("===================================================================
 
 
     (timer:   perform a timer request.... ? on at every )
-
-
-req
-  opr
-  param 
-  receiver_id
-  event
-  socket
-  req
-  res
-    
-
       
-\*======================================================================== */
+\*============================================================================*/
 // Define event handler
 var eventHandler = {};
 eventHandler.watchList={};       // List of event names and who to tell
@@ -394,18 +543,23 @@ wss.on('connection', function(socket) {
       if(mumble) console.log('Websocket parse Error: %s', e);
       return;
     }
-
     // Prepare responce
-    req.socket=socket;
     req.res={};  
     req.res.receiver_id=req.receiver_id;
+    req.socket=socket;
+
     // Performe operation
     if(eventHandler[req.opr] instanceof Function){
-      // Execute the function of the operation 
-      eventHandler[req.opr](req,function(req){
-        // Emit event
-        eventHandler.event(req);
-      });  
+
+      // Preserve scope of request with a closure function
+      (function (req){
+        // Execute the function of the operation 
+        eventHandler[req.opr](req,function(req){
+          // Emit event
+          eventHandler.event(req);
+        });  
+      })(req);
+
     }else{
       if(mumble) console.log('Undefined websocket operation: ' + req.opr);
     }
@@ -426,6 +580,69 @@ wss.on('connection', function(socket) {
 wss.on('error', function(error) {
   if(mumble) console.log("Websocket error: " + error);
 });
+
+/*============================================================================*\
+  Event functions
+\*============================================================================*/
+// Emit event
+eventHandler.event=function(req,callback){
+
+  if(!req) return;
+  // Determin event name
+  if(!req.event){
+    // If operation is 'event' parameter are the event name
+    if(req.opr=='event'){
+      if(!!req.param){
+        req.event=req.param;
+      }else{
+        req.event='all';
+      }
+    // Default to operation as event name
+    }else if(!!req.opr){
+      req.event=req.opr;
+    // secondary default to receiver_id as event name
+    }else if(!!req.receiver_id){
+      req.event=req.receiver_id;
+    }else{ 
+      return;
+    }
+  }
+
+  // add origin  (Find better id: page name, IP, device name etc.)   
+  if(!!req.socket) req.origin=req.socket.fd;
+
+  if(mumble) var txt=''; 
+
+  // Find name of event in watch list
+  for(var name in eventHandler.watchList) {
+    // Skip all that dosen't match event name    
+    if(name!=req.event && name!='all') continue;
+    // Find listners for this event
+    for(var i in eventHandler.watchList[name] ){
+      // Exclude current client as it already got the message
+      if(eventHandler.watchList[name][i].socket==req.socket) continue;
+      // See if client are on-line
+      if(eventHandler.watchList[name][i].socket.readyState!=1) continue;
+      //Compose message
+      if(!req.res) req.res={};
+      req.res.receiver_id=eventHandler.watchList[name][i].receiver_id;
+      // Tell listners
+      eventHandler.watchList[name][i].socket.send(JSON.stringify(req.res));
+      if(mumble) txt += eventHandler.watchList[name][i].socket.fd + ',';
+    }
+  }
+
+  if(mumble && req.event!='time') console.log('Event: %s Sent to socket: %s', req.event,txt); 
+
+  // Activate triggers
+  for(var name in eventHandler.triggerList) {
+    // Check for loop
+    // ...
+  }
+  // Call back
+  if(callback instanceof Function) callback(req);
+}
+
 
 // Add a watch for event to watch list
 eventHandler.watch=function(req,callback){
@@ -457,10 +674,8 @@ eventHandler.watch=function(req,callback){
   if(!eventHandler.watchList[req.param]) eventHandler.watchList[req.param] =[];  
   // Add socket and optionally reveiver_id to array
   eventHandler.watchList[req.param].push({"socket":req.socket,"receiver_id":req.receiver_id});
-//debug(eventHandler.watchList[req.param][eventHandler.watchList[req.param].length-1],1 );
   // Call back
   if(callback instanceof Function) callback(req);
-
 }
 
 
@@ -496,57 +711,6 @@ eventHandler.unwatch=function(req,callback){
   if(callback instanceof Function) callback(req);
 }
 
-// Emit event
-eventHandler.event=function(req,callback){
-
-  if(!req) return;
-  // Determin event name
-  if(!req.event){
-    if(req.opr=='event'){
-      if(!!req.param){
-        req.event=req.param;
-      }else{
-        req.event='all';
-      }
-    }else if(!!req.opr){
-      req.event=req.opr;
-    }else if(!!req.receiver_id){
-      req.event=req.receiver_id;
-    }else{ 
-      return;
-    }
-  }
-
-  // add origin  (Find better id: page name, IP, device name etc.)   
-  if(!!req.socket) req.origin=req.socket.fd;
-
-  // Find name of event in watch list
-  for(var name in eventHandler.watchList) {
-    // Skip all that dosen't match event name    
-    if(name!=req.event && name!='all') continue;
-    // Find listners for this event
-    for(var i in eventHandler.watchList[name] ){
-      // Exclude current client as it already got the message
-      if(eventHandler.watchList[name][i].socket==req.socket) continue;
-      // See if client are on-line
-      if(eventHandler.watchList[name][i].socket.readyState!=1) continue;
-      //Compose message
-      if(!req.res) req.res={};
-      req.res.receiver_id=eventHandler.watchList[name][i].receiver_id;
-      // Tell listners
-      eventHandler.watchList[name][i].socket.send(JSON.stringify(req.res));
-// console.log({"Send event to":eventHandler.watchList[name][i].socket._socket._handle.fd },req);
-    }
-  }
-
-  // Activate triggers
-  for(var name in eventHandler.triggerList) {
-    // Check for loop
-    // ...
-  }
-  // Call back
-  if(callback instanceof Function) callback(req);
-}
 
 // Execute timer command
 eventHandler.setTimer=function(req,callback){
@@ -558,82 +722,67 @@ eventHandler.setTimer=function(req,callback){
 };
 
 
-// Execute script to handle PHP request
+// PHP Execute script request
 eventHandler.php = function(req,callback){
+  var debug=true;
 
-  // Compose request information
-  var connection = {};
-  connection.pathname = req.param;
-  connection.wsquery = req.req;
-  connection.remoteaddress = req.socket._socket.remoteAddress;
-  connection.remoteport = req.socket._socket.remotePort;
-  connection.url=req.socket.upgradeReq.url;
-  connection.method='websocket';
-  connection.docroot=config.docRoot;
-  connection.header =req.socket.upgradeReq.headers;
-  connection.httpversion=req.socket.httpVersion
+  // Make a NSL request
+  var nscriptReq={};
+  nscriptReq.pathname=req.param;
+  nscriptReq.query=req.query;
+  nscriptReq.socket=req.socket;    
 
-  //console.log({"connection":connection});
-
-  // Start PHP process
-  var spawn = require("child_process").spawn;
-  php = spawn('php-cgi',['php_burner.php']);
-
-  //Transfer request to php stdin
-  php.stdin.write(JSON.stringify(connection));
-  php.stdin.end();
-
-  req.header=true; 
+  // Prepare responce
   req.res={};
   req.res.html='';
-  
-  // Catch output from PHP scrit 
-  php.stdout.on('data', function (data) {
-// console.log(data.toString());
-    // Assume PHP always send at least one header: header ends with empty line
-    if(req.header){
-      var line = data.toString().split("\r\n\r\n");
-      if(line.length>1){
-        req.header=false;
-        req.res.html+=line[1];
+  req.res.headers={};
+  req.res.receiver_id=req.receiver_id;
+
+  // Save responce in scope with a closure function
+  (function(res) {
+    nscript.launch('php',nscriptReq,function(event,data,param){
+      switch (event){
+      case 'status':
+        req.res.status=data;
+        if(debug) console.log("Status: %s",data);
+        break;
+      case 'header': // Buffer headers
+        req.res.headers[data]=param;
+        if(debug) console.log("Header: '%s: %s'",data,param);
+        break;
+      case 'data': // Buffer data
+        req.res.html += data;
+        if(debug){ 
+          if(data.toString().length<100)
+            console.log("Data: '%s'",data);
+          else
+            console.log("Data: *** length: ",data.length);
+        }
+        break;
+      case 'end': // Send responce to client
+        if(req.socket.readyState==1) req.socket.send(JSON.stringify(req.res));          
+        if(debug) console.log("End of request");
+        break;
+      case 'error':
+        if(mumble) console.log('Nscript error: %s',data);
+        nreak;
+      default:
+        if(debug) console.log("Unknown event: '%s'",event);
       }
-    }else
-       req.res.html += data.toString();
-  });
-
-  // Catch error output from PHP scrit and send it to client
-  php.stderr.on('data', function (data) {
-//console.log(data.toString());
-    req.res.html += data.toString();
-  });
-
-  // On the last output, end request
-  php.stdout.on('end', function () {
-    // Compose reply
-    if(!!req.receiver_id) req.res.receiver_id=req.receiver_id;
-    req.res.origin="Client"; // we can do better!
-    // If out5put is a json, convert it to an object
-    try{
-      req.res.json=JSON.parse(req.res.html);
-      req.res.html='';
-    }catch (e){
-    }
-    // Send responce to client
-    if(req.socket.readyState==1) req.socket.send(JSON.stringify(req.res));          
-//console.log('PHP child process ended' + JSON.stringify(req.res));
-    // Call back
-    if(callback instanceof Function) callback(req);
-  });
+    });
+  })(req);
 }
 
 // Chat 
-eventHandler.chat=function(req){
+eventHandler.chat=function(req,callback){
   // Compose reply
   req.res.data=req.param;
   req.res.receiver_id=req.receiver_id;
   req.res.origin=req.socket.fd; // we can do better!
   // Send responce to client
-  if(req.socket.readyState==1) req.socket.send(JSON.stringify(req.res));          
+  if(req.socket.readyState==1) req.socket.send(JSON.stringify(req.res));  
+  // Call back
+  if(callback instanceof Function) callback(req);        
 }
 
 // Start a clock event that sends the time every second
@@ -648,13 +797,13 @@ eventHandler.clock = setInterval(function() {
 }, 1000);
 
 
-/* ======================================================================== *\
-   serverGet 
+/*============================================================================*\
+  serverGet 
 
-   Present assortment of information available to the server, in HTML format
-   receiver_id are used as id when createing a div element to replace the 
-   existing one. 
-\* ======================================================================== */
+  Present assortment of information available to the server, in HTML format
+  receiver_id are used as id when createing a div element to replace the 
+  existing one. 
+\*============================================================================*/
 eventHandler.serverGet=function(req,callback){
 
   // Make wrapping
@@ -768,34 +917,11 @@ eventHandler.serverGet=function(req,callback){
         break;
 
       case 'timers':
-/*
-        html = '<table class="_info"><tr><th colspan="2">Timer events</th></tr>';
-        for (var i in eventHandler.timerList) {
-          html += '<tr><td>' + i + '</td><td>';
-          for(var ii in eventHandler.timerList[i]){
-            html += '#' + eventHandler.timerList[i][ii].socket._socket._handle.fd 
-              + ' -> '+ eventHandler.timerList[i][ii].id + '<br>';
-          }
-          html += '</td></tr>'
-        }
-        html += '</table>';
-*/
         break;
 
       case 'triggers':
-/*
-        html = '<table class="_info"><tr><th colspan="2">Event triggers</th></tr>';
-        for (var i in eventHandler.timerList) {
-          html += '<tr><td>' + i + '</td><td>';
-          for(var ii in eventHandler.timerList[i]){
-            html += '#' + eventHandler.timerList[i][ii].socket._socket._handle.fd 
-              + ' -> '+ eventHandler.timerList[i][ii].id + '<br>';
-          }
-          html += '</td></tr>'
-        }
-        html += '</table>';
-*/
         break;
+
       default:
         html='Unknown server information:' + info;
     }

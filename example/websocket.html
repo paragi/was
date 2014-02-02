@@ -4,7 +4,16 @@
    Initialize websocket
 \* ======================================================================== */
 // Open websocket to page server
-var ws = new WebSocket('ws://'+window.document.location.host);
+function wsOpen(){
+  try{
+    ws = new WebSocket('ws://'+window.document.location.host);
+  }catch(e){
+    // Retry every second
+// NB: This dosen't work
+    setTimeout(function(){wsOpen();},4000);
+  }
+}
+wsOpen();
 
 // Format a websocket request
 function wsRequest(operation,parameters,request,id,event){
@@ -15,7 +24,7 @@ function wsRequest(operation,parameters,request,id,event){
     ,"param":parameters
     ,"receiver_id":id
     ,"event":event
-    ,"req":request
+    ,"query":request
   };
   // Send request
   ws.send(JSON.stringify(msg));
@@ -36,9 +45,18 @@ ws.onopen = function () {
 ws.onerror = function (error) {
   // an error occurred when sending/receiving data
   obj=document.getElementById('log');
-  obj.innerHTML = error + " connection is closed" + "\n" + obj.innerHTML;
+  obj.innerHTML = error + " Socket error" + "\n" + obj.innerHTML;
   // Close and reconnect
   // ...
+};
+
+ws.onclose = function (code, message) {
+  // an error occurred when sending/receiving data
+  obj=document.getElementById('log');
+  obj.innerHTML = " connection is closed" + "\n" + obj.innerHTML;
+  // Close and reconnect
+  ws.close();
+  wsOpen();
 };
 
 // Handle incomming websockets mesages
@@ -163,7 +181,7 @@ function cmdjs(id,cmd){
 // Chat send function
 function sc(){
   if(!send.value.length) return;
-  wsRequest("chat",send.value,"chat","chat");
+  wsRequest("chat",send.value,"","chat","chat");
   // Reset and focus input
   send.value="";
   document.forms["chat"].elements["send"].focus();
