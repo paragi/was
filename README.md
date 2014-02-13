@@ -2,7 +2,7 @@
 ###using node.JS and PHP###
 
 WAS is a webserver with support of websockets and a mature scripting language.
-Currently it supports PHP. There is also rudimentry support for Perl, Ruby and Python, but as yet without form support.
+Currently it supports PHP. There is also rudimentry support for Perl, Ruby and Python, but as yet without POST support.
   
 The general idear is that all should be run on the same server and from one port (80 /443)
 
