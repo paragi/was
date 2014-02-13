@@ -1,179 +1,127 @@
 <link rel="stylesheet" href="/css/special_objects.css" media="screen" />
 <script type="text/javascript">
-/* ======================================================================== *\
-   Initialize websocket
-\* ======================================================================== */
-// Open websocket to page server
-function wsOpen(){
-  try{
-    ws = new WebSocket('ws://'+window.document.location.host);
-  }catch(e){
-    // Retry every second
-// NB: This dosen't work
-    setTimeout(function(){wsOpen();},4000);
-  }
-}
-wsOpen();
+/*============================================================================*\
+  Set up a persistant websocket connection
+  add server event listners
+  handle incomming events
+  Mark page as on/off-line by changing style (dimming or bw)
+\*============================================================================*/
+(function(){
+  this.connection = {};
+  window.ws=this;
+  
+  // Mark page as off-line
+  document.body.classList.add('body-off-line');
 
-// Format a websocket request
-function wsRequest(operation,parameters,request,id,event){
-  if(!operation) return;
-  // Escape user input through stringify function
-  var msg={
-    "opr":operation
-    ,"param":parameters
-    ,"receiver_id":id
-    ,"event":event
-    ,"query":request
-  };
-  // Send request
-  ws.send(JSON.stringify(msg));
-}
+  // Make a persistant connection
+  this.connect= function(){
+    // Connect to websocket server
+    connection = new WebSocket('ws://'+window.document.location.host);
 
-// Initialize event watch list
-ws.onopen = function () {
-  // Add events to watch list  
-  wsRequest("watch","time","","clock");
-  wsRequest("watch","switch1","","switch1");
-  wsRequest("watch","switch2","","switch2");
-  wsRequest("watch","switch3","","switch3");
-  wsRequest("watch","switch4","","switch4");
-  wsRequest("watch","chat","","chat");
-  wsRequest("watch","php","","script_output");
-};
+    // Initialize event watch list
+    connection.onopen = function () {
+      // Mark page as on-line
+      document.body.classList.remove('body-off-line');
 
-ws.onerror = function (error) {
-  // an error occurred when sending/receiving data
-  obj=document.getElementById('log');
-  obj.innerHTML = error + " Socket error" + "\n" + obj.innerHTML;
-  // Close and reconnect
-  // ...
-};
+      // Add events to watch list  
+      request("watch","time","","clock");
+      request("watch","switch1","","switch1");
+      request("watch","switch2","","switch2");
+      request("watch","switch3","","switch3");
+      request("watch","switch4","","switch4");
+      request("watch","chat","","chat");
+      request("watch","exec","","script_output");
+    };
 
-ws.onclose = function (code, message) {
-  // an error occurred when sending/receiving data
-  obj=document.getElementById('log');
-  obj.innerHTML = " connection is closed" + "\n" + obj.innerHTML;
-  // Close and reconnect
-  ws.close();
-  wsOpen();
-};
+    // Close connection Event handlers
+    connection.onclose = function (code, message) {
+      // Log this event
+      obj=document.getElementById('log');
+      obj.innerHTML = " connection is closed" + "\n" + obj.innerHTML;
 
-// Handle incomming websockets mesages
-ws.onmessage = function (event) {
-  var obj={};
-  try {
-    var res=JSON.parse(event.data);
-// decodeURIComponent((event.data).replace(/\+/g, '%20'))
-    // Find recipient
-    if(!res.receiver_id) throw("No reveiver id");
-    obj = document.getElementById(res.receiver_id);
-    if(!obj) throw("Receiver ID '"+res.receiver_id +"' unknown");
+      // Mark page as off-line
+      document.body.classList.add('body-off-line');
 
-    // Special cases: Chat
-    if(res.receiver_id=='chat'){
-      obj.innerHTML = res.origin + ": " + res.data + "\n" + obj.innerHTML;
-
-    // Normal element update
-    }else if(res.html){
-      obj.outerHTML = res.html;
-    }else if(res.data){
-      obj.innerHTML = res.data;
-    }
-  } catch (e) {
-    // Add to log window
-    obj=document.getElementById('log');
-    obj.innerHTML = e + ": " + event.data + "\n" + obj.innerHTML;
-  }
-
-  // Log 
-  // Ignore time ticks
-  if(res.receiver_id!='clock'){
-    // Remove html code
-    if(!!res.html) res.html='*HTML*';
-    // Add to log window
-    obj=document.getElementById('log');
-    obj.innerHTML = JSON.stringify(res,null,2) + "\n" + obj.innerHTML;
-  }
-};
-
-/* ======================================================================== *\
-   Debug functions (to be removed)
-\* ======================================================================== */
-function debug(obj,max_depth) {
-  console.log("Debug: ",debug.prints(obj,max_depth));
-}  
-
-debug.depth=0; // Keep track og object depth
-debug.path=[];
-
-debug.prints = function (obj,max_depth) {
-    if(typeof(obj)!='object') return obj;
-    var result='';
-    var tab='';
-    if(!max_depth) max_depth=0;
-    for(i=0;i<debug.depth;i++) tab+='--';
-    for(var i in obj){
-	    // Mozilla bug when accessing document.domConfig
-	    if(i=='domConfig') continue;
-	    if(obj[i] instanceof Object){
-		    result+=tab+'['+i+']=>(object)('+debug.depth+','+max_depth+')\r\n';
-		    if(debug.depth<max_depth) {
-			    debug.depth++;
-			    result+=debug.prints(obj[i],max_depth);
-			    debug.depth--;
-		    }
-	    }else if(obj[i] instanceof Function)
-		    result+=tab+'['+i+']=>(Function)\r\n';
-	    else{
-		    str=''+obj[i];
-		    result+=tab+'['+i+']=>'+str.replace(/\</g,'&lt;')+"\r\n";
-	    }
-    }
-    return result;
-  }
-
-debug.finds = function (obj,needle,max_depth){
-    if(!(obj instanceof Object || obj instanceof Function)) return;
-    var result='';
-    if(!max_depth) max_depth=0;
-    if(debug.depth==0) path=[];
-    for(var i in obj){
-      if(i==needle){
-        for(var p in debug.path)
-          result+=debug.path[p]+'.';
-      result+=i+'\r\n';
+      // Reconnect. If server is unavailable, a close event will fire after timeout
+      // (ca 5 seconds)
+      // Remove instance of previous connection to avoid event triggers fireing
+      if(connection.length>0){
+        delete connection;
+        this.connection={};
       }
-	    // Mozilla bug when accessing document.domConfig
-	    if(i=='domConfig') continue;
-	    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
-		    debug.depth++;
-        debug.path.push(i);
-		    result+=debug.finds(obj[i],needle,max_depth);
-		    debug.depth--;
-        debug.path.pop();
-	    }
-    }
-    return result;
+      connect();
+    };
+
+    // Handle incomming websockets mesages
+    connection.onmessage = function (event) {
+      var obj={};
+      try {
+        var res=JSON.parse(event.data);
+    // decodeURIComponent((event.data).replace(/\+/g, '%20'))
+        // Find recipient
+        if(!res.receiver_id) throw("No reveiver id");
+        obj = document.getElementById(res.receiver_id);
+        if(!obj) throw("Receiver ID '"+res.receiver_id +"' unknown");
+
+        // Special cases: Chat
+        if(res.receiver_id=='chat'){
+          obj.innerHTML = res.origin + ": " + res.data + "\n" + obj.innerHTML;
+
+        // Normal element update
+        }else if(res.html){
+          obj.outerHTML = res.html;
+        }else if(res.data){
+          obj.innerHTML = res.data;
+        }
+      } catch (e) {
+        // Add to log window
+        obj=document.getElementById('log');
+        obj.innerHTML = e + ": " + event.data + "\n" + obj.innerHTML;
+      }
+
+      // Log 
+      // Ignore time ticks
+      if(res.receiver_id!='clock'){
+        // Remove html code
+        if(!!res.html) res.html='*HTML*';
+        // Add to log window
+        obj=document.getElementById('log');
+        obj.innerHTML = JSON.stringify(res,null,2) + "\n" + obj.innerHTML;
+      }
+    };
   }
 
-debug.find = function(obj,needle,max_depth){
-  console.log("Debug: ",debug.finds(obj,needle,max_depth));
-}
+  // Format a websocket request
+  this.request = function (operation,parameters,request,id,event){
+    if(!operation) return;
+    // Escape user input through stringify function
+    var msg={
+      "opr":operation
+      ,"param":parameters
+      ,"receiver_id":id
+      ,"event":event
+      ,"query":request
+    };
+    // Send request
+    connection.send(JSON.stringify(msg));
+  }
 
-/* ======================================================================== *\
-   Helper function for HTML actions
-\* ======================================================================== */
+  connect();
+})();
+
+/*============================================================================*\
+  Helper function for HTML actions
+\*============================================================================*/
 // Run php script cmd.php
 function cmd(id,cmd){
-  wsRequest("php","cmd.php",{"cmd":cmd},id,id);
+  ws.request("exec","cmd.php",{"cmd":cmd},id,id);
   // focus input
   document.forms[0].elements[1].focus();
 }
 
 // Run server (Demo) code
 function cmdjs(id,cmd){
-  wsRequest("staticFunc",cmd,'',id,id);
+  ws.request("staticFunc",cmd,'',id,id);
   // focus input
   document.forms[0].elements[1].focus();
 }
@@ -181,7 +129,7 @@ function cmdjs(id,cmd){
 // Chat send function
 function sc(){
   if(!send.value.length) return;
-  wsRequest("chat",send.value,"","chat","chat");
+  ws.request("chat",send.value,"","chat","chat");
   // Reset and focus input
   send.value="";
   document.forms["chat"].elements["send"].focus();
@@ -191,7 +139,7 @@ function sc(){
 <section>
 <H2>Websocket examples</H2>
 Open two separate browser windows displaying this page, to see the functionality.<br>
-This is an example made of HTML CSS3 Javascript and websocket.
+This is some examples of how to do some common websocket tasks with HTML CSS3 and Javascript.
 </section>
 
 <section>
@@ -229,9 +177,6 @@ This is an example made of HTML CSS3 Javascript and websocket.
 <button type="submit">Send</button>
 </form>
 </section>
-
-
-
 
 <section>
 <h2>Event log</h2>

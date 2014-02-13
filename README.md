@@ -1,7 +1,7 @@
 #Websocket Application Server (WAS)#
 ###using node.JS and PHP###
 
-WAS is a webserver with suppoert of websockets and a mature scripting language; In this case PHP.  
+WAS is a webserver with support of websockets and a mature scripting language; In this case PHP.  
 All i run on the same server from one port.
 
 Install it, run the server and browse the example application.  

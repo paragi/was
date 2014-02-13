@@ -1,108 +1,88 @@
 <script type="text/javascript">
+/*============================================================================*\
+  Set up a persistant websocket connection
+  add server event listners
+  handle incomming events
+  Mark page as on/off-line by changing style (dimming or bw)
+\*============================================================================*/
+(function(){
+  this.connection = {};
+  window.ws=this;
+  
+  // Mark page as off-line
+  document.body.classList.add('body-off-line');
 
-//Have a look at "npm install mod_statuspage"
+  // Make a persistant connection
+  this.connect= function(){
+    // Connect to websocket server
+    connection = new WebSocket('ws://'+window.document.location.host);
 
-// Setup websocket
-var ws = new WebSocket('ws://'+window.document.location.host);
+    // Initialize event watch list
+    connection.onopen = function () {
+      // Mark page as on-line
+      document.body.classList.remove('body-off-line');
 
-// Format a websocket request
-function wsRequest(operation,parameters,request,id,event){
-  if(!operation) return;
-  // Escape user input through stringify function
-  var msg={
-    "opr":operation
-    ,"param":parameters
-    ,"receiver_id":id
-    ,"event":event
-    ,"req":request
-  };
-  // Send request
-  ws.send(JSON.stringify(msg));
-}
+      // Load server info
+      request("serverGet","all","","info");
+    };
 
-ws.onopen = function () {
-  // request server stats
-  wsRequest("serverGet","all","","info");
-};
+    // Close connection Event handlers
+    connection.onclose = function (code, message) {
+      // Mark page as off-line
+      document.body.classList.add('body-off-line');
 
-ws.onmessage = function (event) {
-  try {
-    // Find recipient element an fill it
-    var res=JSON.parse(event.data);
-    var obj = document.getElementById(res.receiver_id);
-    if(res.html){
-      obj.outerHTML = res.html;
-    }else if(msg.dara)
-      obj.innerHTML = res.data;
-  } catch (e) {
-  }
-};
-
-/* ======================================================================== *\
-   Debug functions (to be removed)
-\* ======================================================================== */
-function debug(obj,max_depth) {
-  console.log("Debug: ",debug.prints(obj,max_depth));
-}  
-
-debug.depth=0; // Keep track og object depth
-debug.path=[];
-
-debug.prints = function (obj,max_depth) {
-    if(typeof(obj)!='object') return obj;
-    var result='';
-    var tab='';
-    if(!max_depth) max_depth=0;
-    for(i=0;i<debug.depth;i++) tab+='--';
-    for(var i in obj){
-	    // Mozilla bug when accessing document.domConfig
-	    if(i=='domConfig') continue;
-	    if(obj[i] instanceof Object){
-		    result+=tab+'['+i+']=>(object)('+debug.depth+','+max_depth+')\r\n';
-		    if(debug.depth<max_depth) {
-			    debug.depth++;
-			    result+=debug.prints(obj[i],max_depth);
-			    debug.depth--;
-		    }
-	    }else if(obj[i] instanceof Function)
-		    result+=tab+'['+i+']=>(Function)\r\n';
-	    else{
-		    str=''+obj[i];
-		    result+=tab+'['+i+']=>'+str.replace(/\</g,'&lt;')+"\r\n";
-	    }
-    }
-    return result;
-  }
-
-debug.finds = function (obj,needle,max_depth){
-    if(!(obj instanceof Object || obj instanceof Function)) return;
-    var result='';
-    if(!max_depth) max_depth=0;
-    if(debug.depth==0) path=[];
-    for(var i in obj){
-      if(i==needle){
-        for(var p in debug.path)
-          result+=debug.path[p]+'.';
-      result+=i+'\r\n';
+      // Reconnect. If server is unavailable, a close event will fire after timeout
+      // (ca 5 seconds)
+      // Remove instance of previous connection to avoid event triggers fireing
+      if(connection.length>0){
+        delete connection;
+        this.connection={};
       }
-	    // Mozilla bug when accessing document.domConfig
-	    if(i=='domConfig') continue;
-	    if((obj[i] instanceof Object || obj[i] instanceof Function) && debug.depth<max_depth) {
-		    debug.depth++;
-        debug.path.push(i);
-		    result+=debug.finds(obj[i],needle,max_depth);
-		    debug.depth--;
-        debug.path.pop();
-	    }
-    }
-    return result;
+      connect();
+    };
+
+    // Handle incomming websockets mesages
+    connection.onmessage = function (event) {
+      var obj={};
+      try {
+        var res=JSON.parse(event.data);
+    // decodeURIComponent((event.data).replace(/\+/g, '%20'))
+        // Find recipient
+        if(!res.receiver_id) throw("No reveiver id");
+        obj = document.getElementById(res.receiver_id);
+        if(!obj) throw("Receiver ID '"+res.receiver_id +"' unknown");
+
+        // Normal element update
+        if(res.html){
+          obj.outerHTML = res.html;
+        }else if(res.data){
+          obj.innerHTML = res.data;
+        }
+      } catch (e) {
+        console.error(error);
+      }
+    };
   }
 
-debug.find = function(obj,needle,max_depth){
-  console.log("Debug: ",debug.finds(obj,needle,max_depth));
-}
+  // Format a websocket request
+  this.request = function (operation,parameters,request,id,event){
+    if(!operation) return;
+    // Escape user input through stringify function
+    var msg={
+      "opr":operation
+      ,"param":parameters
+      ,"receiver_id":id
+      ,"event":event
+      ,"query":request
+    };
+    // Send request
+    connection.send(JSON.stringify(msg));
+  }
 
+  connect();
+})();
 </script>
+
 <style> ._info{width: 400px;margin-left: auto;margin-right: auto;}</style>
 
 <section>

@@ -13,7 +13,17 @@ body {
   background:#456;
   font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
   text-align:center;
+  opacity: 1.0;
+  transition: opacity 1s ease-in-out;
+  transition: background-color 1s ease-in-out;
+  -webkit-transition: background-color 1s ease-in-out;
 }
+
+.body-off-line{
+  transition: opacity 1s ease-in-out;
+  opacity: 0.4;
+}
+
 
 pre{font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;}
 ul {list-style-type: disc;}
@@ -35,7 +45,10 @@ header nav {background:#99c;clear:both;float:left;width:100%;}
   header nav ul li a.selected {background:#77a;color:#000;}
 
 section footer {background:none; height:auto;padding:0px 0px 0px 15px;}
-section {background:#eef;}
+section {
+  background:#eef;
+  border: #CDD 1px solid;
+}
 footer {background:#99c;height:40px;}
 
 

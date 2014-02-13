@@ -14,17 +14,20 @@
 
 <?php
   // Pages
+  // Since dynamic script can include other script files with out the concent of the 
+  // server, an other mewchanism of restriction must be here
   $page=array(
      "Welcome"=>"welcome.html"
     ,"Websocket examples"=>"websocket.html"
-    ,"PHP globals"=>"php_globals.php"
-    ,"PHP information"=>"php_info.php"
-  //  ,"Tests"=>"tests.php"
+    ,"Script examples"=>"script_example.html"
     ,"Server status"=>"server_status.html"
   //  ,"Documentation"=>"doc.html"
   //  ,"Style overwiev"=>"style_overwiev.html"
     ,"History"=>"history.html"
     ,"License"=>"license.html"
+    ,""=>"script_example/globals.php"
+    ,""=>"script_example/info.php"
+    ,""=>"script_example/globals.pl"
 
   );
 
@@ -61,7 +64,7 @@
 <style> body {background:#456;} </style>
 
 <footer>
-Version 0.1.0 - Proff of concept<br>
+Version 0.1.2 - Proff of concept<br>
 (c) Simon Rigét 2013 / Paragi MIT License
 </footer>
 
