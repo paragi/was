@@ -32,16 +32,16 @@ Test with:
     $nodejs -v
 
 Create a project directory.
-
+  
     $ mkdir yourdir
     $ cd yourdir
   
-Node JS contains the nice node package manager npm. Use it to install 3 modules: 
+Node JS contains the nice node package manager npm. Use it to install 4 modules: 
 
-    $ npm install express ws ini
+    $ npm install express ws ini cron
 
 Get the WAS application:  
-
+  
     $ wget https://github.com/codemuncky/was/archive/master.zip
     $ unzip master.zip
     $ mv was-master/* ./
@@ -49,7 +49,7 @@ Get the WAS application:
     $ rm master.zip
 
 Run the server:  
-
+  
     $ nodejs server.js
 
 Use a browser to access the server on port 8080 eg. 127.0.0.1:8080  
