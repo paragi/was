@@ -82,8 +82,9 @@
       // Log 
       // Ignore time ticks
       if(res.receiver_id!='clock'){
-        // Remove html code
+        // Remove html code and headers
         if(!!res.html) res.html='*HTML*';
+        if(!!res.headers) delete res.headers;
         // Add to log window
         obj=document.getElementById('log');
         obj.innerHTML = JSON.stringify(res,null,2) + "\n" + obj.innerHTML;

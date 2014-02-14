@@ -63,7 +63,7 @@ $_SERVER['REMOTE_PORT']=@$request['remoteport'];
 // Split address and port
 if(@$_SERVER['HTTP_REFERER']){
   $url=parse_url($_SERVER['HTTP_REFERER']);
-  if($url['port']) 
+  if(@$url['port']) 
     $_SERVER['SERVER_PORT'] = ($url['port']);
   else
     $_SERVER['SERVER_PORT'] = 80;

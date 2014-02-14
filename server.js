@@ -115,6 +115,7 @@ var eventHandler = require('./eventhandler.js');
   Read configuration
 \*============================================================================*/
 //Make sure its global (no var)
+// module.exports = exports = S
 global.config = ini.parse(fs.readFileSync('node-was.conf', 'utf-8'));
 // Sainitize and validate
 config.version = version;
@@ -156,18 +157,6 @@ console.log("Logging mode: %s (%s)",['off','errors','notes','mumble','verbose'][
 //console.log("Configuration:\n" + JSON.stringify(config,null,1));
 
 /*============================================================================*\
-  Error handler 
-\*============================================================================*/
-// Catch errors
-if(config.debugMode.toLowerCase().charAt(0)!='y'){
-  process.on('uncaughtException', function (err) {
-      console.error('An uncaughtException:');
-      console.error(err);
-      // process.exit(1);
-  });
-}
-
-/*============================================================================*\
   Configure express 
 
   NB: The order of applying attributes will in some cases be reflected in 
@@ -175,8 +164,40 @@ if(config.debugMode.toLowerCase().charAt(0)!='y'){
 \*============================================================================*/
 var app = express();
 var server = http.createServer(app);
+
 // Add websockets event handler
 eventHandler.attachServer(server);
+
+// Handle startup errors
+server.on('error',function(err){
+  console.log ( 'Server error:', err.message);
+  process.exit(1);
+});
+
+// Change user ID
+//  Only root can listen on ports under 1024. But we don't want to run the server
+//  as root. 
+server.on('listening',function(){
+  if (!!config.userid && process.getuid && process.setuid) {
+    var uID = process.getuid();
+    try {
+      process.setuid(config.userid);
+      console.log('Changing user ID from: %s to: %s',uID,config.userid);
+    }
+    catch (err) {
+      console.log('Unable to change user ID: ' + err);
+    }
+  }
+
+  var uID = process.getuid();
+  if(uID === 0) 
+    console.log('NB: Server is running as root. !!!!');
+  else
+    console.log('Server is now running as user ID: ' + process.getuid());
+
+  console.log("========================================================================");
+});
+
 
 app.disable('x-powered-by');
 // By default, Express will use a generic HTML wrapper (a layout)
@@ -248,4 +269,15 @@ console.log("Serving static files at: " + config.docRoot);
 // Listen on PORT and call function on incomming requests
 server.listen(config.port,config.ip);
 console.log("Server listening at: " + config.ip + ":" + config.port );
-console.log("========================================================================");
+
+/*============================================================================*\
+  Error handler 
+\*============================================================================*/
+// Catch errors
+if(config.debugMode.toLowerCase().charAt(0)!='y'){
+  process.on('uncaughtException', function (err) {
+      console.error('An uncaughtException:');
+      console.error(err);
+      // process.exit(1);
+  });
+}
