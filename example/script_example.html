@@ -1,0 +1,41 @@
+<script type="text/javascript">
+function op(url){
+  document.forms[0].action=url+'?get_var_1=foo&get_var2=bar';
+  document.forms[0].target=url
+  document.forms[0].submit();
+}
+
+
+</script>
+<section>
+<h1>Examples of dynamic script language support</h1>
+<p>Each link opens in a new window</p>
+<form method="POST">
+<input type="hidden" name="form_variable_1" value="Orange">
+<input type="hidden" name="form_variable_2" value="Banana">
+<input type="hidden" name="form_variable_3[2]" value="Peach">
+<ul>
+
+<li><h1>PHP</h1>PHP Support doen not yet support uploading of files and fast workers<br>
+<a href="javascript:op('/script_example/globals.php');" >Show PHP globals variables</a><br>
+<a href="javascript:op('/script_example/info.php');">Show PHP information page</a> 
+</li>
+
+<li><h1>Python</h1>Python with a basic CGI call<br>
+<a href="javascript:op('/script_example/globals.py');">Show Python globals variables</a>
+</li>
+
+<li><h1>Perl</h1>Perl with a basic CGI call<br>
+<a href="javascript:op('/script_example/globals.pl');">Show Perl globals variables</a>
+</li>
+
+<li><h1>Ruby</h1>Ruby with a basic CGI call<br>
+<a href="javascript:op('/script_example/globals.rb');">Show Perl globals variables</a>
+</li>
+
+
+</ul>
+</form>
+</div>
+</section>
+
