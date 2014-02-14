@@ -63,8 +63,6 @@ To start and monitor the server, install and use the upstart package
 PHP support is achieved using php-cgi and by transfering request data to a script called PHP-burner, that presents the appropriate superglobals to make it look much like its running in an Apache module.
 
 ##Status##
-This is Proof of concept. 
-There will be issues it you try to make it a production platform as is, or if you want to run large off the shelf applications.
-There are both security and performance issues.
-If this project turn out to be useful and people wish to join the project, all that will of cause eventually be ironed out
+This is Proof of concept.  
+If this project turn out to be useful and people wish to join the project, it can be made ready for production.
 
