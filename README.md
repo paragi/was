@@ -42,7 +42,7 @@ Node JS contains the nice node package manager npm. Use it to install 4 modules:
 
 Get the WAS application:  
   
-    $ wget https://github.com/codemuncky/was/archive/master.zip
+    $ wget https://github.com/paragi/was/archive/master.zip
     $ unzip master.zip
     $ mv was-master/* ./
     $ rm -r was-master
