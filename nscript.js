@@ -63,57 +63,7 @@ nscript.launchers= function (){
    - prepare client information for the script to use
    - select the launcing method
 
-    var req_url = URL.parse(req.url)
-    var cgi = { 'PATH_INFO': req_url.pathname
-              , 'SERVER_NAME': server_addr || 'unknown'
-              , 'SERVER_PORT': port
-              , 'SERVER_PROTOCOL': 'HTTP/1.1'
-              , 'SERVER_SOFTWARE': 'Node/' + process.version
-              }
-
-    Object.keys(req.headers).forEach(function(header) {
-      var key = 'HTTP_' + header.toUpperCase().replace(/-/g, '_')
-      cgi[key] = req.headers[header]
-    })
-
-    cgi.REQUEST_METHOD = req.method
-    cgi.QUERY_STRING = req_url.query || ''
-    if('content-length' in req.headers)
-      cgi.CONTENT_LENGTH = req.headers['content-length']
-    if('content-type' in req.headers)
-      cgi.CONTENT_TYPE = req.headers['content-type']
-    if('authorization' in req.headers)
-      cgi.AUTH_TYPE = req.headers.authorization.split(/ /)[0]
-
-
-    var params = Object.keys(cgi).map(function(key) { return [key, cgi[key]] })
-    params.forEach(function(param) {
-      //console.log(' Param: %s = %j', param[0], param[1])
-    })
-
-
-another 
-   var script_dir = options.root;
-        var script_file = url.parse(request.url).pathname;
-        
-        var qs = url.parse(request.url).query ? url.parse(request.url).query : '';
-        var params = makeHeaders(request.headers, [
-            ["SCRIPT_FILENAME",script_dir + script_file],
-            ["REMOTE_ADDR",request.connection.remoteAddress],
-            ["QUERY_STRING", qs],
-            ["REQUEST_METHOD", request.method],
-            ["SCRIPT_NAME", script_file],
-            ["PATH_INFO", script_file],
-            ["DOCUMENT_URI", script_file],
-            ["REQUEST_URI", request.url],
-            ["DOCUMENT_ROOT", script_dir],
-            ["PHP_SELF", script_file],
-            ["GATEWAY_PROTOCOL", "CGI/1.1"],
-            ["SERVER_SOFTWARE", "node/" + process.version]
-        ]);
-        
-
-
+  
 child.stderr.setEncoding('utf8')
   child.stdout.setEncoding('utf8')
 
@@ -188,9 +138,6 @@ nscript.launch = function(type,request,callback){
   // Check that script exists
   fs.exists(nscript.docRoot + connection.pathname, function(exists){
     if (exists) {
-      // Send status OK
-      callback('status',200);
-
       // Launch script
       if(type == 'php')
         nscript.launcher.php(nscript.cgiEngine[type],connection,callback);
@@ -232,9 +179,9 @@ nscript.expressLaunch = function(request, response, next) {
         break;
       case 'data':
         headerSent=true;
-        response.write(data);
+        response.write(data,'binary');
         if(logMode>=verbose){ 
-          if(data.toString().length<100)
+          if(data.length<100)
             console.log("Data: '%s'",data);
           else
             console.log("Data: *** length: ",data.length);
@@ -277,6 +224,7 @@ nscript.expressLaunch = function(request, response, next) {
     1. php-cgi might send error text formatted in HTML before the headers
       Fix: 1. set a default header Content-type: text/html and remove duplicates
            2. error messages must be stores until headers are send.
+           3. location headers must have presedence
     2. php-cgi might send a header in one block and the line ending in another
       Fix: buffer all headers until end of header section are received
     3. the phpinfo() function requests pseudo pages for logo images.
@@ -290,7 +238,8 @@ nscript.expressLaunch = function(request, response, next) {
 nscript.launcher.php = function(cmd,connection,callback) {
   // Start child process
   var proc = require("child_process").spawn('php-cgi',['php_burner.php']);
-
+  proc.stderr.setEncoding('utf8');  
+  proc.stdout.setEncoding('binary');
   //Transfer connection request informastion to stdin
   proc.stdin.write(JSON.stringify(connection));
   proc.stdin.end();
@@ -311,12 +260,14 @@ nscript.launcher.php = function(cmd,connection,callback) {
       // Headers. Assume script always send at least one header
       if(!headersSent){
         // Store headers until a end of header is receiverd (\r\n\r\n) Strip \r
-        buffer+=data.toString().replace(/\r/g,'');
+        buffer+=data;
         // Look for end of header section
-        eoh=buffer.indexOf('\n\n');
-        if(eoh>0 || buffer.length > 4096){
+        eoh=buffer.indexOf('\r\n\r\n');
+        if(eoh<0) eoh=buffer.indexOf('\n\n');
+        if(eoh<0 && buffer.length > 4096) eoh=buffer.length;
+        if(eoh>0){
           // Separate headers from body parts
-          bbuffer+=buffer.substr(eoh+2);
+          bbuffer+=buffer.substr(eoh+4); 
           buffer=buffer.substr(0,eoh+1);
 
           // Divide heades lines  
@@ -325,9 +276,19 @@ nscript.launcher.php = function(cmd,connection,callback) {
           for(var i in line){
             // Split header into key, value pairs
             div = line[i].indexOf(":");
-            if(div>0)
+            if(div>0){
+              // Fix 1.3 Handle redirect location header
+              if(line[i].substr(0,div).toLowerCase()=='location'){
+                callback('status',302);
+                callback('header','Location',line[i].substr(div+2));
+                end=true;
+                callback('end');
+                return;
+              }
+
               // remove dublicate headers so that last one counts
-              headers[ line[i].substr(0,div) ] = line[i].substr(div+2);
+              headers[ line[i].substr(0,div) ] = line[i].substr(div+2).replace(/\r/g,'');
+            }
           }
 
           // Send headers
@@ -359,6 +320,8 @@ nscript.launcher.php = function(cmd,connection,callback) {
     });
 
     proc.stdout.on('close', function () {
+      if(end) return;
+
       if(!headersSent){
         for(var i in headers)
           callback('header',i,headers[i]);
@@ -444,7 +407,8 @@ nscript.launcher.cgi = function(cmd,connection,callback) {
   */
 
   // Start child process
-  var proc = require("child_process").spawn(cmd,arg,{env:env});
+  var opt={cwd:connection.docroot,env:env};
+  var proc = require("child_process").spawn(cmd,arg,opt);
 
   // Catch bad command 
   proc.on('error', function (err) {

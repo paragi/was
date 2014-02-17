@@ -114,6 +114,7 @@ unset($key,$val,$line,$request,$sw_name,$default_script,$path);
 
 // Run script
 if(realpath($_SERVER['SCRIPT_FILENAME'])){
+  chdir($_SERVER['DOCUMENT_ROOT']);
   require $_SERVER['SCRIPT_FILENAME'];
 }else{
   // Websocket responce
