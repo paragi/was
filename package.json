@@ -31,7 +31,8 @@
     "ini": "~1.1.0",
     "express": "~3.4.7",
     "ws": "~0.4.31",
-    "cron": "~1.0.1"
+    "cron": "~1.0.1",
+    "wildcard": "~0.1.4"
   },
   "readmeFilename": "README.md"
 }

@@ -38,7 +38,7 @@ Create a project directory.
   
 Node JS contains the nice node package manager npm. Use it to install 4 modules: 
 
-    $ npm install express ws ini cron
+    $ npm install express ws ini cron wildcard
 
 Get the WAS application:  
   

@@ -107,6 +107,7 @@ var qs = require('querystring');
 // External modules
 var ini = require('ini');
 var express = require('express');
+var wildcard = require('wildcard');
 var nscript = require('./nscript');
 var eventHandler = require('./eventhandler.js');
 
@@ -134,7 +135,7 @@ errors=1;
 notes=2;
 mumble=3;
 verbose=4;
-// Log mose given as a number
+// Log mode given as a number
 if(config.logMode >=1 && config.logMode <=4)
   logMode=config.logMode;
 // Log mode given as a word
@@ -150,12 +151,26 @@ if(path.length == 1) {
   console.log("Can't serve files at: " + path);
   process.exit(1);
 }
+// Move filenames containing wildcards to an array. wildcards: * and ? 
+
+// Use wildcard('foo.*', 'foo.bar'); // true
+if(!!config.allowed){
+  config.allowedWildcard=[];
+  for(var i in config.allowed){
+    if(i.length<1) continue;
+    // test if filename contains wildcards
+    if(i.indexOf("*")>=0 || i.indexOf("?")>=0){
+      config.allowedWildcard.push(i);
+      delete config.allowed[i];
+    }
+  }
+}
 
 console.log("========================================================================");
 console.log("WAS version: " + version);
 console.log("Logging mode: %s (%s)",['off','errors','notes','mumble','verbose'][logMode],logMode);
-//console.log("Configuration:\n" + JSON.stringify(config,null,1));
-
+console.log("Configuration:\n" + JSON.stringify(config,null,1));
+console.log("Testing \\ test");
 /*============================================================================*\
   Configure express 
 
@@ -219,27 +234,51 @@ if(config.debugMode.toLowerCase().charAt(0)=='y'){
   // Production 
   //app.use(express.errorHandler());
 }
-/*============================================================================*\
+/*============================================================================*\ 
   Set up routing serviceses (Middle ware)
 \*============================================================================*/
 
 // Middleware
 app.use(app.router); 
 
+// Convert a string with wilecards (* and ?) into a regex string
+// It was hard to make, so it should be even harder to understand :o)
+// RegExp((str + '').replace(RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&')
+
+// .replace(/\\\*/g, '.*').replace(/\\\?/g, '.')
+function globStringToRegex(str) {
+  return (str + '').replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
+}
+
 // Check that file are on the allowed list
 app.all(/./, function(request, response, next) {
+
   if(logMode>=mumble) 
     console.log(request.client.remoteAddress 
       + " Request page: " + JSON.stringify(request.url) 
       + ((request.body != undefined && request.body.length>0) ? " With body ("+ request.body.length + ")":"")
     );
-  // Allow all if undefined
-  if(config.allowed != undefined
-  && config.allowed[request._parsedUrl.pathname]== undefined){
+ 
+  // Test if file are allowed
+  var allowed=false;
+  if(!config.allowed[request._parsedUrl.pathname]){
+    // Test if it matches wildcard expression
+    for(var i in config.allowedWildcard){
+      if(wildcard(config.allowedWildcard[i],request._parsedUrl.pathname))
+        allowed=true;
+    }
+  }else
+    allowed=true;
+        
+
+  // reject 
+  if(!allowed){
     response.send(404);
-    if(logMode>=mumble) console.log(" Denied! Not on my list");
+    if(logMode>=mumble) console.log(" Denied! " +request._parsedUrl.pathname + " Not on my list");
     return 0;
+
   }
+
   next('route');
 })
  
