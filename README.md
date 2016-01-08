@@ -64,6 +64,6 @@ PHP support is achieved using php-cgi and by transfering request data to a scrip
 
 ##Status##
 This is Proof of concept.  
-I have written another module specificially for PHP integration in node. Please see: https://github.com/paragi/sphp
+I have written another module specifically for PHP integration in node. Please see: https://github.com/paragi/sphp
 
 
